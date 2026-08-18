@@ -1,0 +1,609 @@
+:root {
+  --sfondo: #10151c;
+  --pannello: #161d27;
+  --riga: #1b2431;
+  --bordo: #263141;
+  --testo: #e6edf5;
+  --tenue: #8fa0b5;
+  --accento: #4da3ff;
+  --buono: #35c98a;
+  --medio: #e8b13a;
+  --cattivo: #e8654a;
+  /* colori di ruolo ufficiali di fantacalcio.it, presi dalle loro variabili
+     --role-gk/def/mid/wing/atk. In Mantra gli esterni offensivi (t, w) hanno
+     un colore proprio, il viola, che nel gioco classic non esiste. */
+  --P: hsl(40 94% 52%);
+  --D: hsl(96 70% 46%);
+  --C: hsl(217 93% 52%);
+  --W: hsl(273 100% 61%);
+  --A: hsl(351 89% 53%);
+  --inchiostro: #06101d;
+
+  /* Altezza della cornice appiccicata in cima. Erano numeri scritti a mano
+     nel CSS e non tornavano -- l'intestazione della tabella si fermava a 55px
+     contro una testata di 59, e scorrendo passava una striscia di riga sopra
+     i nomi delle colonne. Le misura app.js a ogni ridimensionamento, perche'
+     cambiano quando la testata va a capo; questi sono solo i valori di
+     partenza, giusti alla larghezza tipica. */
+  --h-testata: 59px;
+  --h-barra: 82px;
+}
+
+/* ogni classe di ruolo porta con sé il proprio colore e il colore del testo
+   che ci sta sopra: chi lo usa legge --c e --ink senza ripetere l'elenco */
+.r-P { --c: var(--P); --ink: var(--inchiostro); }
+.r-D { --c: var(--D); --ink: var(--inchiostro); }
+.r-C { --c: var(--C); --ink: #ffffff; }
+.r-W { --c: var(--W); --ink: #ffffff; }
+.r-A { --c: var(--A); --ink: #ffffff; }
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --sfondo: #f5f7fa;
+    --pannello: #ffffff;
+    /* --riga era bianco come --pannello, e tutto quello che se ne serve per
+       staccarsi dal fondo -- la riga sotto il cursore, i cartellini, la barra
+       d'asta -- restava invisibile. Qui deve essere un gradino piu' scuro del
+       pannello, non uguale. */
+    --riga: #eef2f7;
+    --bordo: #dde3ec;
+    --testo: #16202c;
+    --tenue: #61748c;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--sfondo);
+  color: var(--testo);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ---------- testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--bordo);
+  background: var(--pannello);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+
+/* Le righe che scorrono sotto la cornice si vedono sfocate invece di sparire
+   di netto: si capisce che stanno passando dietro, non che finiscono li'.
+   Solo dove il browser sa farlo, altrimenti resta il fondo pieno di sopra. */
+@supports (backdrop-filter: blur(2px)) {
+  .testata, .barra-asta {
+    background: color-mix(in srgb, var(--pannello) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(1.5);
+  }
+  .barra-asta { background: color-mix(in srgb, var(--riga) 82%, transparent); }
+}
+
+.titolo { display: flex; align-items: baseline; gap: 12px; }
+h1 { font-size: 19px; margin: 0; letter-spacing: -0.3px; }
+.sottotitolo { color: var(--tenue); font-size: 12px; }
+
+.schede { display: flex; gap: 4px; }
+.scheda {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--tenue);
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+.scheda:hover { color: var(--testo); }
+.scheda.attiva { background: var(--riga); border-color: var(--bordo); color: var(--testo); }
+
+/* ---------- barra asta ---------- */
+
+/* Appiccicata sotto la testata. Il commento in index.html la dava per "sempre
+   visibile" ma bastava scorrere di una schermata per perderla, e crediti e
+   offerta massima sono esattamente i due numeri che servono a ogni rilancio:
+   in fondo a un listone da 450 righe erano l'unica cosa che non si vedeva. */
+.barra-asta {
+  display: flex;
+  gap: 28px;
+  padding: 10px 20px;
+  background: var(--riga);
+  border-bottom: 1px solid var(--bordo);
+  flex-wrap: wrap;
+}
+
+/* Appiccicarla conviene solo dove c'e' spazio da spendere. Su una finestra
+   stretta le nove misure si impilano in verticale e la barra diventa alta
+   quanto lo schermo: incollata li' coprirebbe il listone invece di aiutare.
+   Sotto questa soglia scorre via come prima, e l'intestazione della tabella
+   si ferma sotto la sola testata -- da cui il valore di ripiego a zero. */
+@media (min-width: 900px) and (min-height: 620px) {
+  .barra-asta {
+    position: sticky;
+    top: var(--h-testata);
+    z-index: 15;
+  }
+  :root { --h-barra-fissa: var(--h-barra); }
+}
+.misura { display: flex; flex-direction: column; }
+.misura .etichetta { font-size: 11px; color: var(--tenue); text-transform: uppercase; letter-spacing: 0.4px; }
+.misura strong { font-size: 17px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px; }
+/* i due numeri su cui si decide un rilancio pesano piu' degli altri sette */
+#crediti-rimasti, #offerta-massima { font-size: 21px; }
+.misura .conta-ruolo { color: var(--c, var(--testo)); margin-right: 6px; }
+.misura .conta-ruolo:last-child { margin-right: 0; }
+.sotto-misura { font-size: 11px; margin-top: 1px; }
+
+/* ---------- filtri ---------- */
+
+.filtri {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--bordo);
+}
+
+input[type="search"], select {
+  background: var(--pannello);
+  border: 1px solid var(--bordo);
+  color: var(--testo);
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 13px;
+}
+input[type="search"] { min-width: 240px; }
+input[type="search"]:focus, select:focus { outline: 2px solid var(--accento); outline-offset: -1px; }
+
+.gruppo-ruoli { display: flex; gap: 3px; }
+.bottone-ruolo {
+  border: 1px solid var(--bordo);
+  background: var(--pannello);
+  color: var(--tenue);
+  padding: 7px 13px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.bottone-ruolo:first-child { border-radius: 7px 0 0 7px; }
+.bottone-ruolo:last-child { border-radius: 0 7px 7px 0; }
+.bottone-ruolo[data-macro="P"] { --c: var(--P); --ink: var(--inchiostro); }
+.bottone-ruolo[data-macro="D"] { --c: var(--D); --ink: var(--inchiostro); }
+.bottone-ruolo[data-macro="C"] { --c: var(--C); --ink: #ffffff; }
+.bottone-ruolo[data-macro="A"] { --c: var(--A); --ink: #ffffff; }
+/* "Tutti" non ha un ruolo: resta sull'accento */
+.bottone-ruolo.attivo {
+  background: var(--c, var(--accento));
+  border-color: var(--c, var(--accento));
+  color: var(--ink, var(--inchiostro));
+}
+
+.interruttore { display: flex; align-items: center; gap: 6px; color: var(--tenue); font-size: 13px; cursor: pointer; }
+
+.fascia { display: flex; align-items: center; gap: 5px; color: var(--tenue); font-size: 13px; }
+.fascia input {
+  width: 62px; background: var(--pannello); border: 1px solid var(--bordo);
+  color: var(--testo); padding: 7px 8px; border-radius: 7px;
+  font-family: inherit; font-size: 13px;
+}
+.fascia input:focus { outline: 2px solid var(--accento); outline-offset: -1px; }
+
+.stella {
+  background: none; border: none; cursor: pointer; padding: 0 2px;
+  font-size: 15px; line-height: 1; color: var(--bordo);
+}
+.stella:hover { color: var(--medio); }
+.stella.attiva { color: var(--medio); }
+.tabella td.cella-stella { width: 26px; padding-right: 0; }
+.conteggio { margin-left: auto; color: var(--tenue); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- tabella ---------- */
+
+main { padding: 0 20px 60px; }
+
+.tabella { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tabella th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--tenue);
+  font-weight: 600;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--bordo);
+  position: sticky;
+  /* sotto testata e barra, entrambe appiccicate: la somma la tiene aggiornata
+     app.js, cosi' resta giusta anche quando la testata va a capo. Dove la
+     barra non e' appiccicata --h-barra-fissa vale zero e resta la sola testata */
+  top: calc(var(--h-testata) + var(--h-barra-fissa, 0px));
+  background: var(--sfondo);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tabella th.num, .tabella td.num { text-align: right; }
+.tabella th:hover { color: var(--testo); }
+.tabella th.ordinata { color: var(--testo); }
+.tabella th.ordinata::after { content: " ↓"; color: var(--accento); }
+.tabella th.ordinata.crescente::after { content: " ↑"; }
+
+.tabella td { padding: 7px 8px; border-bottom: 1px solid var(--bordo); }
+.tabella tbody tr { cursor: pointer; }
+/* la riga sotto il cursore si segna anche con un filo di colore a sinistra:
+   su una tabella larga il solo cambio di fondo si perde a meta' schermo */
+.tabella tbody tr:hover { background: var(--riga); box-shadow: inset 2px 0 0 var(--accento); }
+.tabella tbody tr.preso-io { background: color-mix(in srgb, var(--buono) 14%, transparent); }
+.tabella tbody tr.preso-altri { opacity: 0.4; }
+.tabella tbody tr:focus-visible { outline: 2px solid var(--accento); outline-offset: -2px; }
+
+/* separatore di fascia: deve leggersi come una riga di intestazione, non
+   come un giocatore, quindi niente hover e niente cursore da click */
+.riga-fascia td {
+  background: var(--riga);
+  border-top: 2px solid var(--bordo);
+  padding: 7px 8px;
+  font-size: 12px;
+}
+.tabella tbody tr.riga-fascia { cursor: default; }
+.tabella tbody tr.riga-fascia:hover td { background: var(--riga); }
+.nome-fascia { font-weight: 700; margin-right: 10px; }
+.liberi-fascia { float: right; color: var(--tenue); }
+
+.nome-giocatore { font-weight: 600; }
+.consigliato { font-weight: 700; font-size: 15px; }
+.tenue { color: var(--tenue); }
+
+/* la fascia di prezzo: il tetto è il numero che si scandaglia scorrendo la
+   colonna, quindi resta in fondo a destra allineato con tutti gli altri */
+.conviene { white-space: nowrap; }
+.conviene strong { font-weight: 700; font-size: 15px; }
+.conviene .tenue { font-size: 12px; }
+/* Un filo verticale prima della colonna su cui si decide. All'asta si scorre
+   quella e basta, e su una tabella larga l'occhio ha bisogno di un appiglio
+   per non perdere la riga. */
+#tabella-listone td.conviene,
+#tabella-listone th[data-ordina="prezzo_consigliato"] {
+  border-left: 1px solid var(--bordo);
+  padding-left: 14px;
+}
+.cartellino .valore.conviene { font-size: 15px; }
+.cartellino .valore.conviene strong { font-size: 21px; }
+
+.pillola-ruolo {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-right: 2px;
+  background: var(--c, var(--bordo));
+  color: var(--ink, var(--testo));
+}
+
+/* la barretta di titolarità: la percentuale si legge, la barra si vede
+   scorrendo la colonna senza doverla leggere */
+.titolarita { white-space: nowrap; }
+.barra-tit {
+  display: inline-block; width: 26px; height: 4px; border-radius: 2px;
+  background: var(--bordo); margin-right: 6px; vertical-align: middle;
+  position: relative; overflow: hidden;
+}
+.barra-tit::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0;
+  width: calc(var(--q) * 100%); background: var(--c-tit, var(--tenue));
+}
+.t-alta { --c-tit: var(--buono); }
+.t-media { --c-tit: var(--medio); }
+.t-bassa { --c-tit: var(--tenue); }
+
+/* il secondo parere sulla titolarità: compare solo quando le due fonti
+   discordano, quindi deve leggersi come un'obiezione al numero accanto e non
+   come una seconda colonna da confrontare riga per riga */
+.tit-contesa {
+  margin-left: 5px; font-size: .82em; color: var(--medio);
+  border-left: 1px solid var(--bordo); padding-left: 5px; cursor: help;
+}
+.riga-calcolo strong.contesa { color: var(--medio); }
+
+.nota-piccola[title] { cursor: help; }
+
+.indice { font-weight: 600; }
+.i-buono { color: var(--buono); }
+.i-medio { color: var(--tenue); }
+.i-cattivo { color: var(--cattivo); }
+
+.nota-piccola {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  color: var(--tenue);
+  margin-right: 3px;
+  white-space: nowrap;
+}
+.n-Titolare { border-color: var(--buono); color: var(--buono); }
+.n-Rigorista { border-color: var(--medio); color: var(--medio); }
+.n-Sottovalutato { border-color: var(--buono); color: var(--buono); }
+.n-Sopravvalutato { border-color: var(--cattivo); color: var(--cattivo); }
+.n-Riserva { opacity: 0.6; }
+.n-Infortunato { border-color: var(--cattivo); color: var(--cattivo); font-weight: 700; }
+.n-Acciaccato { border-color: var(--medio); color: var(--medio); }
+/* le due che vengono dalla sola seconda fonte: le presenze non sono state
+   ridotte, quindi il prezzo accanto e' ancora quello di uno che gioca */
+.n-Squalificato { border-color: var(--cattivo); color: var(--cattivo); font-weight: 700; }
+.n-In-dubbio { border-color: var(--medio); color: var(--medio); font-weight: 700; }
+.n-Corretto-a-mano { border-color: var(--accento); color: var(--accento); }
+
+.nota { color: var(--tenue); max-width: 70ch; margin: 16px 0; }
+
+/* ---------- legenda ---------- */
+
+.legenda {
+  background: var(--pannello);
+  border: 1px solid var(--bordo);
+  border-radius: 9px;
+  margin: 16px 0;
+  padding: 0 16px;
+}
+.legenda summary {
+  cursor: pointer;
+  padding: 11px 0;
+  font-weight: 600;
+  color: var(--accento);
+  list-style: none;
+}
+.legenda summary::before { content: "▸ "; display: inline-block; transition: transform .15s; }
+.legenda[open] summary::before { content: "▾ "; }
+.legenda summary::-webkit-details-marker { display: none; }
+
+.corpo-legenda {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  padding: 4px 0 18px;
+  border-top: 1px solid var(--bordo);
+  margin-top: 2px;
+}
+.corpo-legenda h4 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--tenue); margin: 14px 0 6px;
+}
+.corpo-legenda p { margin: 0 0 9px; max-width: 66ch; font-size: 13px; }
+
+.elenco-ruoli { list-style: none; padding: 0; margin: 0 0 10px; font-size: 13px; }
+.elenco-ruoli li { padding: 2px 0; }
+.elenco-ruoli code {
+  display: inline-block; min-width: 30px;
+  background: var(--c, var(--riga)); border: 1px solid var(--c, var(--bordo));
+  color: var(--ink, var(--testo));
+  border-radius: 4px; padding: 0 5px; margin-right: 7px;
+  font-size: 11px; font-weight: 700; text-align: center;
+  text-transform: uppercase;
+}
+
+@media (max-width: 780px) { .corpo-legenda { grid-template-columns: 1fr; gap: 4px; } }
+
+/* ---------- blocchi portieri ---------- */
+
+.elenco-blocco { display: flex; flex-wrap: wrap; gap: 5px; }
+.portiere-blocco {
+  font-size: 12px; padding: 1px 8px; border-radius: 10px;
+  background: var(--riga); border: 1px solid var(--bordo);
+}
+.portiere-blocco.titolare { border-color: var(--P); color: var(--P); font-weight: 600; }
+.stemma {
+  display: inline-block; width: 30px; text-align: center;
+  background: var(--riga); border: 1px solid var(--bordo);
+  border-radius: 4px; padding: 1px 0; margin-right: 8px;
+  font-size: 11px; font-weight: 700;
+}
+
+/* ---------- pannello dettaglio ---------- */
+
+.pannello {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(520px, 92vw);
+  background: var(--pannello);
+  border-left: 1px solid var(--bordo);
+  padding: 22px 26px 60px;
+  overflow-y: auto;
+  z-index: 40;
+  box-shadow: -18px 0 40px rgba(0,0,0,0.28);
+}
+.velo { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 30; }
+.nascosto { display: none !important; }
+
+.chiudi {
+  position: absolute; top: 14px; right: 18px;
+  background: none; border: none; color: var(--tenue);
+  font-size: 26px; cursor: pointer; line-height: 1;
+}
+.chiudi:hover { color: var(--testo); }
+
+.pannello h2 { margin: 0 0 2px; font-size: 21px; }
+.pannello h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--tenue); margin: 24px 0 8px; font-weight: 600;
+}
+.pannello .squadra-ruolo { color: var(--tenue); margin-bottom: 18px; }
+
+.cartellini { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.cartellino {
+  background: var(--riga); border: 1px solid var(--bordo);
+  border-radius: 9px; padding: 10px 14px; flex: 1; min-width: 108px;
+}
+.cartellino .etichetta { font-size: 10px; text-transform: uppercase; color: var(--tenue); letter-spacing: 0.4px; }
+.cartellino .valore { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.tabellina { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tabellina th { text-align: right; color: var(--tenue); font-weight: 600; padding: 5px 6px; font-size: 11px; }
+.tabellina th:first-child, .tabellina td:first-child { text-align: left; }
+.tabellina td { padding: 5px 6px; border-top: 1px solid var(--bordo); text-align: right; }
+
+.spiegazione { font-size: 13px; color: var(--tenue); }
+.spiegazione strong { color: var(--testo); }
+.riga-calcolo { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--bordo); }
+.riga-calcolo.totale { border-bottom: none; border-top: 2px solid var(--bordo); font-weight: 700; color: var(--testo); margin-top: 4px; padding-top: 8px; }
+
+.azioni { display: flex; gap: 8px; margin: 22px 0 4px; }
+.azioni button, .secondario {
+  flex: 1; padding: 9px; border-radius: 7px; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--bordo); background: var(--riga); color: var(--testo);
+}
+.azioni button.primario { background: var(--buono); border-color: var(--buono); color: #06101d; }
+.azioni button.pericolo { background: none; color: var(--cattivo); border-color: var(--cattivo); }
+.secondario { flex: none; padding: 7px 14px; }
+.azioni button:hover, .secondario:hover { filter: brightness(1.12); }
+
+/* il campo prezzo compare sotto ai bottoni, dentro al pannello: niente
+   dialogo di sistema che blocca la pagina mentre l'asta corre */
+.forma-prezzo {
+  background: var(--riga); border: 1px solid var(--bordo);
+  border-radius: 9px; padding: 12px 14px; margin-top: 10px;
+}
+.forma-prezzo label { display: block; font-size: 13px; margin-bottom: 8px; }
+.riga-prezzo { display: flex; gap: 8px; }
+.riga-prezzo input {
+  flex: 1; min-width: 0; background: var(--pannello); border: 1px solid var(--bordo);
+  color: var(--testo); padding: 9px 10px; border-radius: 7px;
+  font-family: inherit; font-size: 17px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.riga-prezzo input:focus { outline: 2px solid var(--accento); outline-offset: -1px; }
+.riga-prezzo button { flex: none; padding: 9px 14px; }
+.nota-stima { font-size: 12px; margin: 9px 0 0; }
+
+/* ---------- vista asta ---------- */
+
+.asta-testata { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 22px 0 8px; }
+.asta-testata h2 { font-size: 17px; margin: 0; }
+.azioni-asta { display: flex; gap: 8px; flex-wrap: wrap; }
+.secondario.pericolo { background: none; color: var(--cattivo); border-color: var(--cattivo); }
+.secondario.conferma { background: var(--buono); border-color: var(--buono); color: var(--inchiostro); }
+
+/* Il riquadro dei messaggi dell'asta: conferme prima di cancellare, resoconto
+   di un file ricaricato. Sparisce da solo quando e' vuoto, cosi' non lascia un
+   buco fra la testata e la rosa. */
+.messaggio-asta {
+  background: var(--riga); border: 1px solid var(--bordo);
+  border-left: 3px solid var(--accento);
+  border-radius: 9px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px;
+}
+.messaggio-asta:empty { display: none; }
+.messaggio-asta p { margin: 0; }
+.messaggio-asta.brutto { border-left-color: var(--cattivo); }
+.messaggio-asta.buono { border-left-color: var(--buono); }
+.messaggio-asta code { font-size: 12px; color: var(--tenue); }
+.azioni-messaggio { display: flex; gap: 8px; margin-top: 11px; }
+
+.copia-asta {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; font-size: 12px; margin-bottom: 14px;
+}
+.copia-asta:empty { display: none; }
+.copia-asta button { padding: 5px 11px; font-size: 12px; }
+#vista-asta h2 { font-size: 17px; margin: 26px 0 8px; }
+.gruppo-rosa { margin-bottom: 18px; }
+.gruppo-rosa .intestazione {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--tenue); font-weight: 600; margin-bottom: 5px;
+}
+.voce-rosa {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 12px; background: var(--riga); border: 1px solid var(--bordo);
+  border-radius: 7px; margin-bottom: 4px;
+}
+.voce-rosa .prezzo { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- modulo consigliato ---------- */
+
+.modulo-scelto {
+  background: var(--riga); border: 1px solid var(--bordo);
+  border-left: 3px solid var(--accento);
+  border-radius: 9px; padding: 12px 16px; margin-bottom: 12px;
+}
+.modulo-scelto .etichetta {
+  font-size: 10px; text-transform: uppercase; color: var(--tenue); letter-spacing: 0.4px;
+}
+.nome-modulo { font-size: 26px; font-weight: 700; margin-left: 8px; }
+.mancanti { margin-top: 9px; }
+.casella-vuota {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  background: var(--pannello); border: 1px solid var(--bordo);
+  border-radius: 4px; padding: 1px 7px; margin: 2px 4px 0 0;
+}
+.avviso-sprechi { border-left: 3px solid var(--cattivo); padding-left: 10px; margin: 12px 0; }
+.controllo-rosa { border-left: 3px solid var(--bordo); padding-left: 10px; margin: 12px 0; }
+.controllo-manca { border-left-color: var(--cattivo); }
+.controllo-troppi { border-left-color: var(--medio); }
+.controllo-rischio { border-left-color: var(--medio); }
+.titolo-moduli {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--tenue); margin: 18px 0 6px; font-weight: 600;
+}
+.tabellina tr.modulo-migliore td { color: var(--testo); font-weight: 600; }
+#barra-asta #modulo-consigliato { font-size: 17px; }
+.vuoto { color: var(--tenue); font-style: italic; padding: 8px 0; }
+
+@media (max-width: 720px) {
+  .tabella th:nth-child(7), .tabella td:nth-child(7),
+  .tabella th:nth-child(8), .tabella td:nth-child(8),
+  .tabella th:nth-child(9), .tabella td:nth-child(9) { display: none; }
+  /* nel listone la regola generica taglierebbe la titolarità e lascerebbe la
+     fantamedia: su uno schermo stretto conta di più sapere se gioca */
+  #tabella-listone th:nth-child(6), #tabella-listone td:nth-child(6) { display: none; }
+  #tabella-listone th:nth-child(7), #tabella-listone td:nth-child(7) { display: table-cell; }
+  main { padding: 0 10px 40px; }
+}
+
+/* La coppia di portieri consigliata: con un blocco già preso, quali si
+   sposano meglio con quello. Il bordo a sinistra invece di uno sfondo pieno
+   perché la riga può già essere colorata da "preso da altri". */
+.coppia-consigliata { box-shadow: inset 3px 0 0 var(--buono); }
+.nota-piccola.n-coppia {
+  background: color-mix(in srgb, var(--buono) 18%, transparent);
+  color: var(--buono);
+  margin-left: 6px;
+}
+
+/* Lo stato del tier sulla riga che apre un ruolo: quanti dei titolari di lega
+   restano da contendere, e di quanto la scarsita' sta alzando il prezzo. */
+.premio-scarsita {
+  font-weight: 600;
+  padding: 0 .35em;
+  border-radius: .3em;
+  background: var(--sfondo-tenue, rgba(128, 128, 128, .15));
+}
+/* Il costo che ha superato il tetto perche' la fascia si sta svuotando: e' un
+   numero che si muove durante l'asta, e va distinto dal listino di agosto. */
+.costo-scarsita { font-weight: 600; color: var(--cattivo, #c0392b); }
+
+/* La riserva per la riparazione. Sta nella scheda Asta e non nella barra
+   appiccicata: si decide una volta prima di cominciare, mentre la barra deve
+   restare i due numeri che servono a ogni rilancio. Che sia attiva pero' si
+   vede anche di la', sotto i crediti: un portafoglio ridotto in silenzio a
+   meta' asta sarebbe la cosa piu' spaventosa dell'interfaccia. */
+.riserva {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 10px 0 16px; padding: 10px 12px;
+  border: 1px solid var(--bordo); border-radius: 8px;
+}
+.riserva input { width: 90px; padding: 5px 8px; font: inherit;
+  border: 1px solid var(--bordo); border-radius: 6px; background: var(--sfondo); color: inherit; }
+.riserva .spiegazione { margin: 0; flex: 1 1 260px; }
+.riserva-attiva { display: block; font-size: 11px; font-weight: 400; opacity: .75; }

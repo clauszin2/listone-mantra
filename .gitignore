@@ -1,0 +1,17 @@
+# Lista di INCLUSIONE: per difetto non si carica niente, e si aggiunge a mano
+# solo cio' che serve al sito. Cosi' STRATEGIA-ASTA.md, README.md, config.json,
+# le istantanee dell'asta e i 47 MB di data/raw non possono finire nel repo
+# per distrazione: vanno aggiunti di proposito, non evitati di proposito.
+/*
+
+!/.gitignore
+!/LEGGIMI.md
+
+!/web/
+
+# Dei dati serve un file solo: quello che app.js va a leggere.
+!/data/
+/data/*
+!/data/processed/
+/data/processed/*
+!/data/processed/listone.json

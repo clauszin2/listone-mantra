@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listone Mantra</title>
+<!-- la scheda si riconosce a colpo d'occhio fra le altre venti che avrai
+     aperte durante l'asta; sta qui dentro per non aggiungere un file -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234da3ff'/%3E%3Ctext x='16' y='23' font-size='19' font-family='system-ui,sans-serif' font-weight='700' text-anchor='middle' fill='%2306101d'%3EL%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="testata">
+  <div class="titolo">
+    <h1>Listone Mantra</h1>
+    <span id="sottotitolo" class="sottotitolo">caricamento…</span>
+  </div>
+  <nav class="schede">
+    <button class="scheda attiva" data-vista="listone">Listone</button>
+    <button class="scheda nascosto" data-vista="portieri" id="scheda-portieri">Portieri</button>
+    <button class="scheda" data-vista="avanzate">Statistiche avanzate</button>
+    <button class="scheda" data-vista="asta">Asta</button>
+  </nav>
+</header>
+
+<!-- sempre visibile: i crediti che restano servono a decidere ogni rilancio,
+     non solo quando si guarda la propria rosa -->
+<div id="barra-asta" class="barra-asta">
+  <div class="misura"><span class="etichetta">Crediti rimasti</span><strong id="crediti-rimasti">—</strong>
+    <span class="riserva-attiva" id="riserva-in-barra"></span></div>
+  <div class="misura">
+    <span class="etichetta" title="Il massimo che puoi offrire per un giocatore solo, tenendo da parte un credito per ogni altro slot che ti resta da riempire">Offerta massima</span>
+    <strong id="offerta-massima">—</strong>
+  </div>
+  <div class="misura"><span class="etichetta">Slot da riempire</span><strong id="slot-rimasti">—</strong></div>
+  <div class="misura"><span class="etichetta">Media per slot</span><strong id="media-slot">—</strong></div>
+  <div class="misura"><span class="etichetta">Rosa</span><strong id="rosa-ruoli">—</strong></div>
+  <div class="misura">
+    <span class="etichetta" title="Giocatori ancora liberi che finiranno nell'undici di qualcuno: quando scendono, aspettare costa">Titolari liberi</span>
+    <strong id="titolari-liberi">—</strong>
+  </div>
+  <div class="misura">
+    <span class="etichetta" title="Il modulo che sfrutta meglio i giocatori che hai già preso">Punta al</span>
+    <strong id="modulo-consigliato">—</strong>
+  </div>
+  <div class="misura">
+    <span class="etichetta" title="Quanto si sono discostati i crediti ancora in circolazione dal valore ancora sul piatto">Mercato</span>
+    <strong id="scostamento-mercato">—</strong>
+    <label class="interruttore sotto-misura"><input type="checkbox" id="prezzi-live"> prezzi live</label>
+  </div>
+</div>
+
+<section class="filtri">
+  <input type="search" id="ricerca" placeholder="Cerca giocatore o squadra…  ( / )" autocomplete="off"
+         title="Premi / da qualsiasi punto per venire qui, Invio per aprire il primo risultato">
+  <div class="gruppo-ruoli" id="filtro-macro"></div>
+  <select id="filtro-mantra"><option value="">Tutti i ruoli Mantra</option></select>
+  <select id="filtro-squadra"><option value="">Tutte le squadre</option></select>
+  <span class="fascia">
+    <label for="prezzo-min">Prezzo</label>
+    <input type="number" id="prezzo-min" min="0" step="1" placeholder="da" inputmode="numeric">
+    <span class="tenue">–</span>
+    <input type="number" id="prezzo-max" min="0" step="1" placeholder="a" inputmode="numeric">
+  </span>
+  <label class="interruttore"><input type="checkbox" id="solo-preferiti"> ★ Solo preferiti</label>
+  <label class="interruttore"><input type="checkbox" id="solo-occasioni"> Solo occasioni</label>
+  <label class="interruttore"><input type="checkbox" id="nascondi-presi"> Nascondi i presi</label>
+  <label class="interruttore" title="Raggruppa ogni ruolo Mantra nelle sue fasce di valore, dalla più cara al riempimento. Chi copre due caselle compare in tutte e due: la fascia si calcola dentro ciascuna"><input type="checkbox" id="mostra-fasce"> Fasce</label>
+  <label class="interruttore" title="Ricalcola i tetti sulla rosa che hai già comprato: chi occupa una casella che hai già coperto vale meno, e le occasioni cambiano di conseguenza"><input type="checkbox" id="prezzi-rosa"> Per la tua rosa</label>
+  <span id="conteggio" class="conteggio"></span>
+</section>
+
+<main>
+  <details id="legenda" class="legenda">
+    <summary>Come si legge questa tabella</summary>
+    <div class="corpo-legenda">
+      <div>
+        <h4>Le colonne</h4>
+        <p><strong>Conviene</strong> — la fascia in cui ha senso comprarlo. Il numero in grassetto
+        è il tetto: quanto rende nella tua lega secondo le regole del vostro punteggio, non in una
+        lega generica. Sommando quei prezzi su tutti i giocatori che verranno comprati si ottiene
+        esattamente il budget, quindi ogni credito speso sopra il tetto è un credito tolto a un
+        altro acquisto. È anche il motivo per cui i tetti si possono confrontare fra ruoli diversi.</p>
+        <p>Il numero tenue davanti è quanto andrà via davvero — il consenso fra il FVM ufficiale e
+        il prezzo di Algo, che incorpora il fatto che il mercato paga gli attaccanti più del loro
+        valore e i centrocampisti meno. Quando c'è, quello è lo spazio in cui rilanciare
+        tranquillo. Dove leggi <strong>fino a</strong> invece il mercato chiede già più del tetto:
+        nessuno spazio, solo il punto in cui fermarsi, e di quanto lo sfonderà lo vedi aprendo
+        il giocatore.</p>
+        <p><strong>FM attesa</strong> — la fantamedia stimata per la stagione che inizia, non
+        quella dell'anno scorso. Le presenze attese contano quanto lei, perché un 7,5 in 20
+        partite rende meno di un 6,8 in 36, e sono dentro a ogni prezzo: le trovi nel dettaglio
+        del giocatore.</p>
+        <p><strong>Titolarità</strong> — quanto è probabile che parta titolare alla prossima
+        giornata, dalle probabili formazioni di fantacalcio.it. È l'unico dato del listone che
+        parli della stagione che inizia: tutto il resto è storia, e la storia descrive il ruolo
+        che il giocatore aveva prima. Serve soprattutto su chi ha cambiato squadra, dove le
+        presenze ereditate dal vecchio mestiere non vogliono dire più niente.</p>
+        <p><strong>Il secondo numero accanto alla titolarità</strong> — quando compare, è la
+        stessa percentuale secondo <em>SOS Fanta</em>, e compare solo dove le due fonti
+        distano almeno venti punti. Il prezzo continua a usare fantacalcio.it, che copre
+        465 giocatori invece di 300 e regge meglio il confronto con le presenze vere
+        dell'anno scorso. Il secondo numero non serve a correggere il primo: serve a dirti
+        che su quel giocatore metà del mercato la pensa diversamente, il che al rilancio
+        cambia più di qualche punto di stima.</p>
+        <p><strong>Note</strong> — al massimo tre per giocatore, nell'ordine in cui
+        servono: prima quello che lo tiene fuori dal campo, poi il giudizio sul prezzo,
+        poi il ruolo, infine i tratti. Il centro della scala non ha nota: <em>Titolare</em>
+        e <em>Riserva</em> dicono qualcosa perché non li ha quasi nessuno, mentre il
+        ballottaggio in mezzo lo era per più di metà del listone.
+        <em>Infortunato</em> e <em>Acciaccato</em> compaiono alla misura del campionato,
+        non della prossima giornata: chi salta l'esordio o sconta un turno di squalifica
+        non prende nessuna nota, perché vale una giornata su 38 e la percentuale di
+        titolarità lo tiene già basso. Le presenze gliele toglie comunque il motore.
+        Quando la nota la sa solo SOS Fanta, il motivo esce passandoci sopra il mouse.</p>
+        <p><strong>Prezzi live</strong> — i prezzi qui sopra sono calcolati a budget pieno: valgono
+        al primo rilancio. Man mano che l'asta va avanti registra anche quanto hanno pagato gli
+        altri, e l'interruttore in alto ricalibra tutto sui crediti ancora in circolazione. Se la
+        lega ha bruciato i soldi presto, quello che resta si compra a sconto e i prezzi scendono
+        tutti insieme; se la lega è stata avara, salgono. Il fattore parte da 1 e si muove solo con
+        quello che registri, quindi conta soprattutto segnare i colpi grossi.</p>
+        <p><strong>Per la tua rosa</strong> — i tetti qui sopra valgono in una lega, non nella
+        tua rosa, e sono la stessa cosa solo finché non hai comprato niente. Il motore misura il
+        vantaggio sul sostituto che <em>la lega</em> schiererebbe al suo posto; ma appena hai
+        preso un PC top, il sostituto vero di un secondo PC top sei tu. L'interruttore ricalcola
+        ogni tetto su quanto quel giocatore alza l'undici che schiererai davvero: chi occupa una
+        casella già coperta crolla a pochi crediti, e chi ti manca sale. Cambia anche la colonna
+        <em>Affare</em>, che è poi il punto — le occasioni vere sono quelle per te, non quelle in
+        astratto. Il metro è l'acquisto che quello slot farebbe comunque, e lo trovi scritto nel
+        dettaglio del giocatore.</p>
+        <p>Clicca una riga qualsiasi per vedere da dove esce il prezzo, lo storico e i dati avanzati.</p>
+      </div>
+      <div>
+        <h4>I ruoli Mantra</h4>
+        <ul class="elenco-ruoli" id="elenco-ruoli"></ul>
+        <p class="tenue">Chi copre più ruoli riceve un piccolo bonus di valore: in Mantra poter
+        cambiare modulo senza rifare la rosa conta.</p>
+      </div>
+    </div>
+  </details>
+
+  <div id="vista-listone">
+    <table class="tabella" id="tabella-listone">
+      <thead>
+        <tr>
+          <th data-ordina="preferito" title="Clicca la stella per segnare i giocatori che ti interessano">★</th>
+          <th data-ordina="ruoli_mantra">Ruoli</th>
+          <th data-ordina="nome">Giocatore</th>
+          <th data-ordina="squadra">Sq.</th>
+          <th data-ordina="prezzo_consigliato" class="num" title="Da quanto costera' davvero fino a quanto vale: oltre il tetto stai togliendo crediti a un altro acquisto">Conviene</th>
+          <th data-ordina="fantamedia_attesa" class="num">FM attesa</th>
+          <th data-ordina="titolarita" class="num" title="Probabilita' di partire titolare alla prossima giornata, dalle probabili formazioni di fantacalcio.it. Il secondo numero, dove c'e', e' la stessa percentuale secondo SOS Fanta: compare solo quando le due fonti distano almeno venti punti.">Titolarità</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="vista-portieri" class="nascosto">
+    <p class="nota" id="nota-blocchi"></p>
+    <table class="tabella" id="tabella-portieri">
+      <thead>
+        <tr>
+          <th data-ordina="squadra">Squadra</th>
+          <th data-ordina="prezzo_consigliato" class="num">Consigliato</th>
+          <th data-ordina="quotazione_scalata" class="num" title="Quotazione del portiere titolare">Listino</th>
+          <th data-ordina="scarto_listino" class="num">Scarto</th>
+          <th data-ordina="fantamedia_ponderata" class="num" title="Fantamedia della porta, pesata su quanto ci si aspetta che giochi ciascun portiere">FM porta</th>
+          <th class="num" title="Clean sheet attesi sulle 38 giornate, dai gol attesi contro ogni avversario">CS attesi</th>
+          <th class="num" id="col-coppia" title="Quanto questo blocco aggiunge alla porta che hai già: con i blocchi se ne schiera uno per giornata, quindi il secondo vale per quanto è complementare al primo">In coppia</th>
+          <th>Portieri compresi nel blocco</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="vista-avanzate" class="nascosto">
+    <p class="nota">Dati Understat della stagione più recente. <strong>Diff.</strong> è la differenza fra gol realizzati ed expected goals: molto positiva significa rendimento difficile da ripetere, molto negativa significa che i gol potrebbero arrivare.</p>
+    <table class="tabella" id="tabella-avanzate">
+      <thead>
+        <tr>
+          <th data-ordina="nome">Giocatore</th>
+          <th data-ordina="squadra">Sq.</th>
+          <th data-ordina="u_minuti" class="num">Minuti</th>
+          <th data-ordina="u_gol" class="num">Gol</th>
+          <th data-ordina="u_xg" class="num">xG</th>
+          <th data-ordina="u_diff_gol" class="num">Diff.</th>
+          <th data-ordina="u_assist" class="num">Assist</th>
+          <th data-ordina="u_xa" class="num">xA</th>
+          <th data-ordina="u_xg90" class="num" title="Expected goals ogni 90 minuti">xG/90</th>
+          <th data-ordina="u_tiri" class="num">Tiri</th>
+          <th data-ordina="u_kp" class="num" title="Passaggi che generano un tiro">Passaggi chiave</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="vista-asta" class="nascosto">
+    <div class="asta-testata">
+      <h2>La tua rosa</h2>
+      <div class="azioni-asta">
+        <button id="esporta-asta" class="secondario" title="Scarica un file con tutti gli acquisti registrati: è l'unica copia che sopravvive al browser">Esporta su file</button>
+        <button id="ricarica-asta" class="secondario" title="Rimette gli acquisti da un file esportato prima">Ricarica da file</button>
+        <input type="file" id="file-asta" accept=".json,application/json" class="nascosto">
+        <button id="azzera-asta" class="secondario pericolo">Azzera asta</button>
+      </div>
+    </div>
+    <div id="messaggio-asta" class="messaggio-asta"></div>
+    <div id="copia-asta" class="copia-asta"></div>
+
+    <div class="riserva">
+      <label for="riserva-crediti"><strong>Riserva per l'asta di riparazione</strong></label>
+      <input type="number" id="riserva-crediti" min="0" step="10" value="0" inputmode="numeric">
+      <span class="spiegazione" id="riserva-effetto"></span>
+    </div>
+    <div id="rosa-contenitore"></div>
+
+    <h2>Su quale modulo puntare</h2>
+    <div id="moduli-contenitore"></div>
+    <h2>Presi dagli altri</h2>
+    <div id="altrui-contenitore"></div>
+  </div>
+</main>
+
+<aside id="pannello" class="pannello nascosto">
+  <button class="chiudi" id="chiudi-pannello" aria-label="Chiudi">×</button>
+  <div id="pannello-contenuto"></div>
+</aside>
+<div id="velo" class="velo nascosto"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
