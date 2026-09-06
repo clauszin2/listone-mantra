@@ -79,10 +79,26 @@ correlazione 0,49 con quello che succede davvero, errore tipico ~60 crediti sui
 giocatori che compri. Servono per sapere **quando fermarti** in un rilancio, non
 per decidere al posto tuo.
 
-Quella misura viene dal Mantra, che è il formato su cui il motore è stato
-tarato. **Sul Classic non c'è un backtest.** I prezzi li calcola lo stesso
-motore, ma l'ancoraggio al mercato è diverso: in Mantra tira verso i prezzi di
-Algo (all'85%), che è una seconda valutazione; in Classic Algo non c'è — i suoi
-numeri sono prezzi Mantra e non si applicano — quindi si tira verso il FVM
-ufficiale, e al 70%, perché un listino copiato più stretto di così è solo il
-listino.
+### Dal 6 settembre 2026 i prezzi sono del motore
+
+Prima erano per l'85% quelli di un'app esterna, riportati sulla scala della
+lega: la correlazione con i loro era 0,995, cioè il listone *era* il loro
+listone. Adesso il prezzo lo fa il motore, con un solo corrimano — un terzo di
+FVM ufficiale, che è pubblico e sempre aggiornato — e la correlazione col
+mercato è scesa a 0,88. È lì che la colonna *Conviene* comincia a dire qualcosa:
+contro un mercato che stai copiando le occasioni non esistono per definizione.
+
+Il motore ha guadagnato due correzioni misurate al posto di quella copia. La
+prima: il vantaggio sul sostituto non diventa crediti uno a uno, ma con un
+esponente di 0,8. Il motore stima bene la fantamedia (pendenza 0,96) e male il
+prezzo (0,47): esce due volte più disperso del vero, e il sesto più caro dei
+giocatori che compri viene prezzato 158 quando ne rende 85. Comprimere migliora
+ogni singola colonna del backtest. La seconda: su chi non ha storico in Serie A
+il listino adesso corregge anche la fantamedia, non solo le presenze — il
+prezzo nasce da `(fantamedia − sostituto) × presenze`, e correggere solo le
+presenze non ancorava niente.
+
+Quel che resta dell'app esterna è **l'XPV**, la percentuale di partite in cui si
+aspettano che uno prenda voto. Non è un prezzo, è un dato sulle presenze, ed è
+la migliore delle tre fonti che ci sono (correlazione 0,72 con le presenze vere
+contro 0,61 delle probabili formazioni). Si spegne da `peso_presenze_xpv`.
