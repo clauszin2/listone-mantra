@@ -54,7 +54,15 @@ Poi apri `http://localhost:8777/web/`. Per chiudere, `Ctrl+C` nel terminale.
 | Ruoli | P, D, C, A | dodici, dal braccetto alla punta centrale |
 | Rosa | fissa: 3 + 8 + 8 + 6 | libera: 24 di movimento |
 | Portieri | uno per uno, con un prezzo loro | a blocchi, due per squadra |
+| Modificatore di difesa | acceso | spento |
 | Quotazioni | colonna FVM Classic | colonna FVM Mantra |
+
+Nel Classic è acceso anche il **modificatore di difesa**: paga la media voto del
+portiere e dei tre difensori migliori, quindi lì conta il voto e non i bonus, e
+un centrale che porta a casa 6,5 tutte le domeniche vale più di uno che alterna
+5,5 e un gol. Sposta il 10% del budget verso i portieri e il 4% verso i
+difensori. Le soglie sono quelle più comuni su fantacalcio.it — **controlla il
+regolamento della tua lega**, perché ognuna se le tara come vuole.
 
 Da qui esce tutto il resto. In Classic gli otto difensori li compri comunque,
 quindi ogni reparto ha la sua asticella e un difensore forte vale molto di più

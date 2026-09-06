@@ -1514,6 +1514,8 @@ function apriPannello(id) {
         <div class="riga-calcolo"><span>Prende almeno 6 nel</span><strong>${Math.round((mod.prob_sufficienza || 0) * 100)}% delle partite</strong></div>
         ${mod.rendimento !== undefined
           ? `<div class="riga-calcolo"><span>Vale per il fattore rendimento</span><strong>${mod.rendimento >= 0 ? "+" : ""}${mod.rendimento.toFixed(3)}</strong></div>` : ""}
+        ${mod.difesa !== undefined
+          ? `<div class="riga-calcolo"><span>Vale per il modificatore di difesa</span><strong>${mod.difesa >= 0 ? "+" : ""}${mod.difesa.toFixed(3)}</strong></div>` : ""}
         ${mod.fairplay !== undefined
           ? `<div class="riga-calcolo"><span>Vale per il fattore fairplay</span><strong>${mod.fairplay >= 0 ? "+" : ""}${mod.fairplay.toFixed(3)}</strong></div>` : ""}
         <div class="riga-calcolo totale"><span>Aggiunto alla fantamedia</span><strong>${mod.totale >= 0 ? "+" : ""}${mod.totale.toFixed(3)}</strong></div>
@@ -1524,6 +1526,20 @@ function apriPannello(id) {
       sufficienza in più vale circa ${(rm.valore_di_una_sufficienza || 0).toFixed(2)} punti:
       questo giocatore ne porta la sua quota. Il fattore fairplay pesa molto meno, ma i
       cartellini tolgono comunque qualcosa.</p>`;
+    const d = rm.difesa;
+    if (mod.difesa !== undefined && d) {
+      html += `<p class="spiegazione">Il <strong>modificatore di difesa</strong> non guarda i
+      bonus: paga la <strong>media voto</strong> del portiere più i tre difensori migliori che
+      schieri, e solo se ne schieri almeno quattro — ${Math.round(d.attivo * 100)}% dei moduli.
+      Una difesa da schierare fa in media ${d.media_tipica.toFixed(2)}, che vale
+      ${d.bonus_atteso.toFixed(1)} punti a giornata; da lì ogni decimo di voto in più ne vale
+      ${(d.pendenza / 10).toFixed(2)}, diviso fra le quattro pagelle che fanno la media. Questo
+      giocatore prende ${g.media_voto_attesa.toFixed(2)} contro i
+      ${(d.riferimento[g.ruolo_classic] || 0).toFixed(2)} di chi verrebbe contato al posto suo:
+      è quello scarto a fare il numero qui sopra. È l'unico punto in cui conta il voto e non la
+      fantamedia, e con questa regola un difensore regolare vale più di uno che alterna
+      disastri e gol.</p>`;
+    }
   }
 
   const conStorico = stagioni.filter((s) => g.storico[s]);
