@@ -9,12 +9,15 @@
 
 !/web/
 
-# Dei dati serve un file solo: quello che app.js va a leggere.
+# Dei dati servono due file: i due listoni che app.js va a leggere, uno per
+# formato. Senza quello del Classic il sito si apre e non trova i dati appena
+# scegli quel formato.
 !/data/
 /data/*
 !/data/processed/
 /data/processed/*
 !/data/processed/listone.json
+!/data/processed/listone-classic.json
 
 # Serviti da GitHub Pages: reindirizzamento della radice su web/, e .nojekyll
 # perche' Pages non passi il sito per Jekyll.

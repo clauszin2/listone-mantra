@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Listone Mantra</title>
+<title>Listone</title>
 <!-- la scheda si riconosce a colpo d'occhio fra le altre venti che avrai
      aperte durante l'asta; sta qui dentro per non aggiungere un file -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234da3ff'/%3E%3Ctext x='16' y='23' font-size='19' font-family='system-ui,sans-serif' font-weight='700' text-anchor='middle' fill='%2306101d'%3EL%3C/text%3E%3C/svg%3E">
@@ -11,9 +11,38 @@
 </head>
 <body>
 
+<!-- La prima domanda, prima di qualunque prezzo: Classic e Mantra hanno
+     quotazioni ufficiali diverse e ruoli diversi, quindi sono due listoni
+     diversi e non due modi di guardare lo stesso. La scelta resta nel browser,
+     e la si cambia dalla testata. -->
+<div id="scelta-formato" class="scelta-formato nascosto">
+  <div class="scatola-scelta">
+    <h2>Che asta stai facendo?</h2>
+    <p>Non è la stessa lista con un'etichetta diversa: cambiano i ruoli, cambiano le
+       quotazioni ufficiali e cambia contro chi ogni giocatore compete per un posto in
+       rosa. <strong>I prezzi sono calcolati due volte, e vengono diversi.</strong></p>
+    <div class="bottoni-formato">
+      <button data-formato="classic">
+        <strong>Classic</strong>
+        <span>Portieri, difensori, centrocampisti, attaccanti. Rosa da 25 a composizione
+              fissa: 3 + 8 + 8 + 6, e i portieri si comprano uno per uno.</span>
+      </button>
+      <button data-formato="mantra">
+        <strong>Mantra</strong>
+        <span>Dodici ruoli, dal braccetto alla punta centrale. Rosa a composizione libera
+              e portieri a blocchi, com'è la tua lega.</span>
+      </button>
+    </div>
+    <p class="tenue">Si cambia quando vuoi dalla testata. Quello che segni resta separato:
+       due formati, due aste.</p>
+  </div>
+</div>
+
 <header class="testata">
   <div class="titolo">
-    <h1>Listone Mantra</h1>
+    <h1 id="titolo">Listone</h1>
+    <button type="button" id="cambia-formato" class="cambia-formato"
+            title="Passa all'altro formato: prezzi, ruoli e asta sono separati">—</button>
     <span id="sottotitolo" class="sottotitolo">caricamento…</span>
   </div>
   <nav class="schede">
@@ -55,7 +84,7 @@
   <input type="search" id="ricerca" placeholder="Cerca giocatore o squadra…  ( / )" autocomplete="off"
          title="Premi / da qualsiasi punto per venire qui, Invio per aprire il primo risultato">
   <div class="gruppo-ruoli" id="filtro-macro"></div>
-  <select id="filtro-mantra"><option value="">Tutti i ruoli Mantra</option></select>
+  <select id="filtro-mantra"><option value="">Tutti i ruoli</option></select>
   <select id="filtro-squadra"><option value="">Tutte le squadre</option></select>
   <span class="fascia">
     <label for="prezzo-min">Prezzo</label>
@@ -66,7 +95,7 @@
   <label class="interruttore"><input type="checkbox" id="solo-preferiti"> ★ Solo preferiti</label>
   <label class="interruttore"><input type="checkbox" id="solo-occasioni"> Solo occasioni</label>
   <label class="interruttore"><input type="checkbox" id="nascondi-presi"> Nascondi i presi</label>
-  <label class="interruttore" title="Raggruppa ogni ruolo Mantra nelle sue fasce di valore, dalla più cara al riempimento. Chi copre due caselle compare in tutte e due: la fascia si calcola dentro ciascuna"><input type="checkbox" id="mostra-fasce"> Fasce</label>
+  <label class="interruttore" id="etichetta-fasce" title="Raggruppa ogni ruolo nelle sue fasce di valore, dalla più cara al riempimento"><input type="checkbox" id="mostra-fasce"> Fasce</label>
   <label class="interruttore" title="Ricalcola i tetti sulla rosa che hai già comprato: chi occupa una casella che hai già coperto vale meno, e le occasioni cambiano di conseguenza"><input type="checkbox" id="prezzi-rosa"> Per la tua rosa</label>
   <span id="conteggio" class="conteggio"></span>
 </section>
@@ -132,9 +161,9 @@
         <p>Clicca una riga qualsiasi per vedere da dove esce il prezzo, lo storico e i dati avanzati.</p>
       </div>
       <div>
-        <h4>I ruoli Mantra</h4>
+        <h4 id="titolo-ruoli">I ruoli</h4>
         <ul class="elenco-ruoli" id="elenco-ruoli"></ul>
-        <p class="tenue">Chi copre più ruoli riceve un piccolo bonus di valore: in Mantra poter
+        <p class="tenue" id="nota-ruoli">Chi copre più ruoli riceve un piccolo bonus di valore: in Mantra poter
         cambiare modulo senza rifare la rosa conta.</p>
       </div>
     </div>
@@ -145,7 +174,7 @@
       <thead>
         <tr>
           <th data-ordina="preferito" title="Clicca la stella per segnare i giocatori che ti interessano">★</th>
-          <th data-ordina="ruoli_mantra">Ruoli</th>
+          <th data-ordina="ruoli">Ruoli</th>
           <th data-ordina="nome">Giocatore</th>
           <th data-ordina="squadra">Sq.</th>
           <th data-ordina="prezzo_consigliato" class="num" title="Da quanto costera' davvero fino a quanto vale: oltre il tetto stai togliendo crediti a un altro acquisto">Conviene</th>

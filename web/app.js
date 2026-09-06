@@ -1,11 +1,107 @@
 "use strict";
 
+// ----------------------------------------------------------- il formato
+//
+// Classic e Mantra non sono due viste sullo stesso listone. Cambiano i ruoli
+// (uno contro fino a tre), cambiano le quotazioni ufficiali -- fantacalcio.it
+// ne pubblica due colonne diverse -- e cambia la rosa: in Classic e' a
+// composizione fissa e i portieri si comprano uno per uno, in Mantra e' libera
+// e nella tua lega i portieri vanno a blocchi. Da li' escono due listoni con
+// prezzi diversi, calcolati due volte dalla build, e due file di dati.
+//
+// La scelta vive nel browser e decide tutto quello che segue, a partire dalle
+// chiavi in cui si salva l'asta: le due aste non si devono mescolare mai. Il
+// Mantra tiene le chiavi storiche senza suffisso, cosi' un'asta gia' salvata
+// non si accorge di niente.
+const CHIAVE_FORMATO = "formato-listone";
+
+const FORMATI = {
+  classic: {
+    nome: "Classic",
+    dati: "../data/processed/listone-classic.json",
+    suffisso: "-classic",
+    ruoli: { p: "Portiere", d: "Difensore", c: "Centrocampista", a: "Attaccante" },
+    colori: { p: "P", d: "D", c: "C", a: "A" },
+    ordine: ["p", "d", "c", "a"],
+    // In Classic il modulo non chiede una casella ma un numero: tre difensori
+    // sono tre difensori, chiunque siano. Le caselle restano il modo di
+    // scriverlo perche' cosi' il risolutore e' lo stesso dei moduli Mantra.
+    moduli: {
+      "3-4-3": ["d", "d", "d", "c", "c", "c", "c", "a", "a", "a"],
+      "3-5-2": ["d", "d", "d", "c", "c", "c", "c", "c", "a", "a"],
+      "4-3-3": ["d", "d", "d", "d", "c", "c", "c", "a", "a", "a"],
+      "4-4-2": ["d", "d", "d", "d", "c", "c", "c", "c", "a", "a"],
+      "4-5-1": ["d", "d", "d", "d", "c", "c", "c", "c", "c", "a"],
+      "5-3-2": ["d", "d", "d", "d", "d", "c", "c", "c", "a", "a"],
+      "5-4-1": ["d", "d", "d", "d", "d", "c", "c", "c", "c", "a"],
+    },
+    etichettaRuoli: "Tutti i ruoli",
+    titoloRuoli: "I ruoli",
+    notaRuoli: "In Classic il ruolo è uno solo e non c'è nessun bonus di versatilità: " +
+               "non ci sono caselle da coprire, solo reparti da riempire.",
+    notaFasce: "Raggruppa ogni ruolo nelle sue fasce di valore, dalla più cara al riempimento",
+  },
+  mantra: {
+    nome: "Mantra",
+    dati: "../data/processed/listone.json",
+    suffisso: "",
+    ruoli: {
+      por: "Portiere", dc: "Difensore centrale", dd: "Terzino destro", ds: "Terzino sinistro",
+      b: "Braccetto", e: "Esterno", m: "Mediano", c: "Centrocampista", w: "Ala",
+      t: "Trequartista", a: "Attaccante", pc: "Punta centrale",
+    },
+    // I dodici ruoli mantra si raggruppano nei cinque colori usati da
+    // fantacalcio.it: porta, difesa, centrocampo, esterni offensivi, attacco.
+    // L'esterno (e) è colorato come il centrocampo, l'ala (w) come il trequartista.
+    colori: {
+      por: "P",
+      dd: "D", dc: "D", ds: "D", b: "D",
+      e: "C", m: "C", c: "C",
+      t: "W", w: "W",
+      a: "A", pc: "A",
+    },
+    // Dalla difesa all'attacco: e' l'ordine in cui si legge una formazione.
+    ordine: ["dc", "b", "dd", "ds", "e", "m", "c", "w", "t", "a", "pc"],
+    // Gli undici moduli ammessi in Mantra, edizione 2025/26. Ogni voce elenca
+    // le dieci caselle di movimento: il portiere non c'e' perche' e' uno e lo
+    // copre il blocco. Una casella come "dc/b" accetta un difensore centrale o
+    // un braccetto, "t/a/pc" tutti e tre.
+    moduli: {
+      "3-4-3":   ["dc", "dc", "dc/b", "e", "m/c", "c", "e", "w/a", "w/a", "a/pc"],
+      "3-4-1-2": ["dc", "dc", "dc/b", "e", "m/c", "c", "e", "t", "a/pc", "a/pc"],
+      "3-4-2-1": ["dc", "dc", "dc/b", "m", "m/c", "e", "e/w", "t", "t/a", "a/pc"],
+      "3-5-2":   ["dc", "dc", "dc/b", "m", "m/c", "e", "e/w", "c", "a/pc", "a/pc"],
+      "3-5-1-1": ["dc", "dc", "dc/b", "m", "m", "c", "e/w", "e/w", "t/a", "a/pc"],
+      "4-3-3":   ["dd", "dc", "dc", "ds", "m/c", "m", "c", "w/a", "w/a", "a/pc"],
+      "4-3-1-2": ["dd", "dc", "dc", "ds", "m/c", "m", "c", "t", "t/a/pc", "a/pc"],
+      "4-4-2":   ["dd", "dc", "dc", "ds", "m/c", "c", "e", "e/w", "a/pc", "a/pc"],
+      "4-1-4-1": ["dd", "dc", "dc", "ds", "m", "c/t", "t", "e/w", "w", "a/pc"],
+      "4-4-1-1": ["dd", "dc", "dc", "ds", "m", "c", "e/w", "e/w", "t/a", "a/pc"],
+      "4-2-3-1": ["dd", "dc", "dc", "ds", "m", "m/c", "w/t", "t", "w/a", "a/pc"],
+    },
+    etichettaRuoli: "Tutti i ruoli Mantra",
+    titoloRuoli: "I ruoli Mantra",
+    notaRuoli: "Chi copre più ruoli riceve un piccolo bonus di valore: in Mantra poter " +
+               "cambiare modulo senza rifare la rosa conta.",
+    notaFasce: "Raggruppa ogni ruolo Mantra nelle sue fasce di valore, dalla più cara al " +
+               "riempimento. Chi copre due caselle compare in tutte e due: la fascia si " +
+               "calcola dentro ciascuna",
+  },
+};
+
+// null finche' non si e' scelto: `avvia()` mostra la schermata e si ferma li'.
+const FORMATO = FORMATI[localStorage.getItem(CHIAVE_FORMATO)]
+  ? localStorage.getItem(CHIAVE_FORMATO) : null;
+// Prima della scelta non si legge nessun dato, ma le chiavi devono comunque
+// esistere: si parte da quelle del Mantra, che sono le storiche.
+const F = FORMATI[FORMATO] || FORMATI.mantra;
+
 // Le chiavi del localStorage stanno in cima perche' `caricaAsta()` gira gia'
-// alla riga sotto: dichiarate piu' avanti sarebbero ancora nella zona morta.
-const CHIAVE_ASTA = "asta-mantra";
-const CHIAVE_COPIA = "asta-mantra-copia";      // vedi copiaDiSicurezza()
-const CHIAVE_PREFERITI = "preferiti-mantra";
-const CHIAVE_RISERVA = "riserva-mantra";
+// poche righe sotto: dichiarate piu' avanti sarebbero ancora nella zona morta.
+const CHIAVE_ASTA = "asta-mantra" + F.suffisso;
+const CHIAVE_COPIA = "asta-mantra-copia" + F.suffisso;   // vedi copiaDiSicurezza()
+const CHIAVE_PREFERITI = "preferiti-mantra" + F.suffisso;
+const CHIAVE_RISERVA = "riserva-mantra" + F.suffisso;
 
 // Di quanto devono distare le due fonti di titolarita' perche' valga la pena
 // mostrarle tutte e due in colonna. Stesso valore di SCARTO_NOTEVOLE in
@@ -42,39 +138,12 @@ const stato = {
 
 const NOMI_MACRO = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
 const FRA_I = { P: "fra i portieri", D: "fra i difensori", C: "fra i centrocampisti", A: "fra gli attaccanti" };
-const NOMI_MANTRA = {
-  por: "Portiere", dc: "Difensore centrale", dd: "Terzino destro", ds: "Terzino sinistro",
-  b: "Braccetto", e: "Esterno", m: "Mediano", c: "Centrocampista", w: "Ala",
-  t: "Trequartista", a: "Attaccante", pc: "Punta centrale",
-};
-// Gli undici moduli ammessi in Mantra, edizione 2025/26. Ogni voce elenca le
-// dieci caselle di movimento: il portiere non c'e' perche' e' uno e lo copre
-// il blocco. Una casella come "dc/b" accetta un difensore centrale o un
-// braccetto, "t/a/pc" tutti e tre.
-const MODULI = {
-  "3-4-3":   ["dc", "dc", "dc/b", "e", "m/c", "c", "e", "w/a", "w/a", "a/pc"],
-  "3-4-1-2": ["dc", "dc", "dc/b", "e", "m/c", "c", "e", "t", "a/pc", "a/pc"],
-  "3-4-2-1": ["dc", "dc", "dc/b", "m", "m/c", "e", "e/w", "t", "t/a", "a/pc"],
-  "3-5-2":   ["dc", "dc", "dc/b", "m", "m/c", "e", "e/w", "c", "a/pc", "a/pc"],
-  "3-5-1-1": ["dc", "dc", "dc/b", "m", "m", "c", "e/w", "e/w", "t/a", "a/pc"],
-  "4-3-3":   ["dd", "dc", "dc", "ds", "m/c", "m", "c", "w/a", "w/a", "a/pc"],
-  "4-3-1-2": ["dd", "dc", "dc", "ds", "m/c", "m", "c", "t", "t/a/pc", "a/pc"],
-  "4-4-2":   ["dd", "dc", "dc", "ds", "m/c", "c", "e", "e/w", "a/pc", "a/pc"],
-  "4-1-4-1": ["dd", "dc", "dc", "ds", "m", "c/t", "t", "e/w", "w", "a/pc"],
-  "4-4-1-1": ["dd", "dc", "dc", "ds", "m", "c", "e/w", "e/w", "t/a", "a/pc"],
-  "4-2-3-1": ["dd", "dc", "dc", "ds", "m", "m/c", "w/t", "t", "w/a", "a/pc"],
-};
-
-// I dodici ruoli mantra si raggruppano nei cinque colori usati da fantacalcio.it:
-// porta, difesa, centrocampo, esterni offensivi, attacco. L'esterno (e) è
-// colorato come il centrocampo, l'ala (w) come il trequartista.
-const COLORE_RUOLO = {
-  por: "P",
-  dd: "D", dc: "D", ds: "D", b: "D",
-  e: "C", m: "C", c: "C",
-  t: "W", w: "W",
-  a: "A", pc: "A",
-};
+// I ruoli, i colori e i moduli sono quelli del formato scelto: stanno tutti in
+// FORMATI, qui restano solo i nomi con cui il resto del file li chiama.
+const NOMI_RUOLI = F.ruoli;
+const MODULI = F.moduli;
+const COLORE_RUOLO = F.colori;
+const ORDINE_RUOLI = F.ordine;
 
 // ------------------------------------------------------------- prezzi live
 //
@@ -265,7 +334,13 @@ function costoAtteso(g, f = 1) {
 // ---------------------------------------------------------------- avvio
 
 async function avvia() {
-  const risposta = await fetch("../data/processed/listone.json");
+  collegaSceltaFormato();
+  if (!FORMATO) {                 // prima visita: si sceglie e basta
+    mostraSceltaFormato();
+    return;
+  }
+  applicaEtichetteFormato();
+  const risposta = await fetch(F.dati);
   if (!risposta.ok) {
     document.getElementById("sottotitolo").textContent =
       "dati non trovati: esegui prima  python3 -m fanta.build";
@@ -295,6 +370,51 @@ async function avvia() {
   preparaFiltri();
   collegaEventi();
   disegna();
+}
+
+// La schermata di scelta e' anche il modo di cambiare formato dopo: cambiare
+// vuol dire cambiare file di dati, chiavi di salvataggio, ruoli e moduli, cioe'
+// tutto quello che questo file ha letto all'avvio. Ricaricare la pagina e'
+// l'unico modo onesto di farlo -- e non si perde niente, perche' l'asta sta nel
+// browser e ogni formato ha la sua.
+function mostraSceltaFormato() {
+  document.getElementById("scelta-formato").classList.remove("nascosto");
+}
+
+function collegaSceltaFormato() {
+  const schermata = document.getElementById("scelta-formato");
+  for (const b of schermata.querySelectorAll("button[data-formato]")) {
+    b.classList.toggle("attuale", b.dataset.formato === FORMATO);
+    b.addEventListener("click", () => {
+      const scelto = b.dataset.formato;
+      if (scelto === FORMATO) { schermata.classList.add("nascosto"); return; }
+      localStorage.setItem(CHIAVE_FORMATO, scelto);
+      location.reload();
+    });
+  }
+  // chiudere senza scegliere si puo' solo se un formato c'e' gia'
+  schermata.addEventListener("click", (e) => {
+    if (e.target === schermata && FORMATO) schermata.classList.add("nascosto");
+  });
+  const cambia = document.getElementById("cambia-formato");
+  cambia.textContent = FORMATO ? F.nome : "—";
+  cambia.addEventListener("click", mostraSceltaFormato);
+}
+
+// Le poche scritte che nominano il formato. Stanno nell'HTML con il testo del
+// Mantra, che e' il caso in cui il documento e' leggibile anche senza
+// JavaScript; qui vengono riscritte se serve.
+function applicaEtichetteFormato() {
+  document.title = `Listone ${F.nome}`;
+  document.getElementById("titolo").textContent = `Listone ${F.nome}`;
+  const scelte = document.querySelector("#filtro-mantra option[value='']");
+  if (scelte) scelte.textContent = F.etichettaRuoli;
+  const titoloRuoli = document.getElementById("titolo-ruoli");
+  if (titoloRuoli) titoloRuoli.textContent = F.titoloRuoli;
+  const notaRuoli = document.getElementById("nota-ruoli");
+  if (notaRuoli) notaRuoli.textContent = F.notaRuoli;
+  const fasce = document.getElementById("etichetta-fasce");
+  if (fasce) fasce.title = F.notaFasce;
 }
 
 // Le aste registrate prima dei prezzi live segnavano a zero tutto quello che
@@ -384,15 +504,19 @@ function preparaIntestazione() {
   const data = new Date(r.generato_il).toLocaleString("it-IT", {
     day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
   });
+  const rosa = r.lega.slot_rosa
+    ? "rosa " + Object.entries(r.lega.slot_rosa).map(([k, n]) => `${n}${k}`).join("+")
+    : `rosa libera da ${r.lega.giocatori_movimento}` +
+      (r.lega.blocchi_per_squadra ? ` + ${r.lega.blocchi_per_squadra} blocchi portieri` : "");
   document.getElementById("sottotitolo").textContent =
     `${r.stagione} · ${r.giocatori_totali} giocatori · lega da ${r.lega.n_squadre} squadre ` +
-    `× ${r.lega.crediti_iniziali} crediti · aggiornato il ${data}`;
+    `× ${r.lega.crediti_iniziali} crediti · ${rosa} · aggiornato il ${data}`;
 }
 
 function preparaLegenda() {
   const usati = new Set();
-  DATI.giocatori.forEach((g) => g.ruoli_mantra.forEach((r) => usati.add(r)));
-  document.getElementById("elenco-ruoli").innerHTML = Object.entries(NOMI_MANTRA)
+  DATI.giocatori.forEach((g) => g.ruoli.forEach((r) => usati.add(r)));
+  document.getElementById("elenco-ruoli").innerHTML = Object.entries(NOMI_RUOLI)
     .filter(([r]) => usati.has(r))
     .map(([r, nome]) => `<li><code class="r-${COLORE_RUOLO[r]}">${r}</code>${nome}</li>`)
     .join("");
@@ -421,10 +545,10 @@ function preparaFiltri() {
   const usati = new Set();
   DATI.giocatori
     .filter((g) => !(aBlocchi && g.ruolo_classic === "P"))
-    .forEach((g) => g.ruoli_mantra.forEach((r) => usati.add(r)));
+    .forEach((g) => g.ruoli.forEach((r) => usati.add(r)));
   const selMantra = document.getElementById("filtro-mantra");
-  for (const r of Object.keys(NOMI_MANTRA).filter((r) => usati.has(r))) {
-    selMantra.insertAdjacentHTML("beforeend", `<option value="${r}">${NOMI_MANTRA[r]}</option>`);
+  for (const r of Object.keys(NOMI_RUOLI).filter((r) => usati.has(r))) {
+    selMantra.insertAdjacentHTML("beforeend", `<option value="${r}">${NOMI_RUOLI[r]}</option>`);
   }
 
   if (aBlocchi) {
@@ -626,7 +750,7 @@ function filtrati() {
   return DATI.giocatori.filter((g) => {
     if (aBlocchi && g.ruolo_classic === "P") return false;  // stanno nella scheda Portieri
     if (stato.macro && g.ruolo_classic !== stato.macro) return false;
-    if (stato.mantra && !g.ruoli_mantra.includes(stato.mantra)) return false;
+    if (stato.mantra && !g.ruoli.includes(stato.mantra)) return false;
     if (stato.squadra && g.squadra !== stato.squadra) return false;
     if (stato.soloPreferiti && !preferiti[g.id]) return false;
     // la fascia di prezzo si legge su quello che vedi in tabella, quindi
@@ -1045,9 +1169,9 @@ function motivoNota(e, g) {
 }
 
 function pillole(g) {
-  const ruoli = g.ruoli_mantra.length ? g.ruoli_mantra : [g.ruolo_classic.toLowerCase()];
+  const ruoli = g.ruoli.length ? g.ruoli : [g.ruolo_classic.toLowerCase()];
   return ruoli.map((r) =>
-    `<span class="pillola-ruolo r-${COLORE_RUOLO[r] || g.ruolo_classic}" title="${NOMI_MANTRA[r] || r}">${r}</span>`
+    `<span class="pillola-ruolo r-${COLORE_RUOLO[r] || g.ruolo_classic}" title="${NOMI_RUOLI[r] || r}">${r}</span>`
   ).join("");
 }
 
@@ -1066,7 +1190,6 @@ function pillole(g) {
 // all'asta. Il riempimento va in fondo a ogni ruolo, non in fondo a tutto.
 // Dalla difesa all'attacco, come si legge una formazione. Stessa sequenza di
 // fanta/moduli.py: le fasce arrivano di li'.
-const ORDINE_RUOLI = ["dc", "b", "dd", "ds", "e", "m", "c", "w", "t", "a", "pc"];
 
 // Con le fasce accese non si scorre un listone di giocatori ma di *caselle*:
 // in Mantra non compri un difensore, compri il posto che il modulo ti chiede,
@@ -1078,7 +1201,7 @@ const ORDINE_RUOLI = ["dc", "b", "dd", "ds", "e", "m", "c", "w", "t", "a", "pc"]
 function ordinaPerFasce(righe) {
   const voci = [];
   for (const g of righe) {
-    const ruoli = stato.mantra ? [stato.mantra] : (g.ruoli_mantra || []);
+    const ruoli = stato.mantra ? [stato.mantra] : (g.ruoli || []);
     for (const ruolo of ruoli) {
       if (!g.fasce || !(ruolo in g.fasce)) continue;
       voci.push({ g, ruolo, fascia: g.fasce[ruolo] });
@@ -1131,7 +1254,7 @@ function riassuntoFasceVive(f) {
 function rigaFascia(ruolo, fascia, vivo_, f) {
   const dati = (DATI.riepilogo.fasce || {})[ruolo] || {};
   const info = (dati.fasce || []).find((x) => x.fascia === fascia);
-  const nome = NOMI_MANTRA[ruolo] || ruolo;
+  const nome = NOMI_RUOLI[ruolo] || ruolo;
   const titolo = fascia ? `${nome} · Fascia ${fascia}` : `${nome} · Riempimento`;
   const liberi = vivo_ ? vivo_.liberi : 0;
   const banda = vivo_ && vivo_.max !== null
@@ -1284,7 +1407,7 @@ function apriPannello(id) {
   const preso = asta[g.id];
   const f = fattoreLive();
 
-  const ruoli = g.ruoli_mantra.map((r) => NOMI_MANTRA[r] || r).join(", ");
+  const ruoli = g.ruoli.map((r) => NOMI_RUOLI[r] || r).join(", ");
   let html = `
     <h2><button class="stella ${preferiti[g.id] ? "attiva" : ""}" data-stella-dettaglio="${g.id}"
         style="font-size:20px">${preferiti[g.id] ? "★" : "☆"}</button> ${g.nome}</h2>
@@ -1325,7 +1448,7 @@ function apriPannello(id) {
       <div class="riga-calcolo"><span>Livello di riferimento del ruolo</span><strong>${g.riferimento_ruolo}</strong></div>
       <div class="riga-calcolo"><span>Vantaggio sul riferimento</span><strong>${g.surplus}</strong></div>
       ${g.moltiplicatore_versatilita > 1
-        ? `<div class="riga-calcolo"><span>Bonus versatilità (${g.ruoli_mantra.length} ruoli)</span><strong>×${g.moltiplicatore_versatilita}</strong></div>` : ""}
+        ? `<div class="riga-calcolo"><span>Bonus versatilità (${g.ruoli.length} ruoli)</span><strong>×${g.moltiplicatore_versatilita}</strong></div>` : ""}
       ${g.prezzo_motore !== undefined && g.prezzo_motore !== null
         ? `<div class="riga-calcolo"><span>Prezzo del solo motore</span><strong>${arrotonda(g.prezzo_motore)}</strong></div>
            <div class="riga-calcolo"><span>Dopo l'ancoraggio al mercato</span><strong>${arrotonda(g.prezzo_consigliato)}</strong></div>` : ""}
@@ -1473,7 +1596,7 @@ function apriPannello(id) {
 // te, e la risposta cambia a ogni acquisto. Compare solo a rosa avviata: a
 // rosa vuota i due tetti coincidono per costruzione e ripeterlo sarebbe rumore.
 function sezioneRosa(g, f = 1) {
-  if (!rosaDiMovimento().length) return "";
+  if (!miaRosa().length) return "";
   const mv = valoreMarginale(g);
   if (mv === null) return "";
   const tuo = prezzoPerLaTuaRosa(g);
@@ -1483,7 +1606,11 @@ function sezioneRosa(g, f = 1) {
 
   const perche = spiegaMarginale(g);
   let motivo = "";
-  if (perche && !perche.entra) {
+  if (perche && perche.portiere) {
+    motivo = `In porta ci va uno solo e ci hai già <strong>${perche.titolare}</strong>:
+              quello che questo ti aggiunge è il vantaggio su di lui, non il suo valore
+              pieno. Le altre caselle da portiere sono riserve.`;
+  } else if (perche && !perche.entra) {
     motivo = `Nel tuo undici migliore (${perche.modulo}) <strong>non ci entra</strong>:
               le sue caselle sono già occupate da giocatori più forti, e quello che
               paghi resta in panchina.`;
@@ -1656,7 +1783,10 @@ let _salvataggioRotto = false;
 //
 // La copia non sostituisce il file: sta nello stesso cassetto che puo' sparire.
 
-const FORMATO_ASTA = "asta-mantra";
+// Il file di un formato non si ricarica nell'altro: i giocatori sarebbero
+// anche gli stessi, ma i prezzi, i ruoli e la forma della rosa no, e un'asta
+// Classic riletta in Mantra darebbe numeri che non vogliono dire niente.
+const FORMATO_ASTA = "asta-" + (FORMATO || "mantra");
 const VERSIONE_ASTA = 1;
 const RUOLI_VALIDI = ["P", "D", "C", "A"];
 
@@ -1708,7 +1838,7 @@ function esportaAsta() {
 
 function nomeFileAsta() {
   const d = new Date(), n = (x) => String(x).padStart(2, "0");
-  return `asta-mantra-${d.getFullYear()}-${n(d.getMonth() + 1)}-${n(d.getDate())}`
+  return `${FORMATO_ASTA}-${d.getFullYear()}-${n(d.getMonth() + 1)}-${n(d.getDate())}`
        + `-${n(d.getHours())}${n(d.getMinutes())}.json`;
 }
 
@@ -1734,7 +1864,7 @@ function leggiEsportazione(testo) {
   try { d = JSON.parse(testo); }
   catch { return { errore: "non è un file JSON leggibile." }; }
   if (!d || typeof d !== "object" || d.formato !== FORMATO_ASTA)
-    return { errore: "non è un'esportazione dell'asta (manca il formato asta-mantra)." };
+    return { errore: `non è un'esportazione dell'asta di questo formato (qui serve ${FORMATO_ASTA}).` };
   if (!(Number(d.versione) <= VERSIONE_ASTA))
     return { errore: `è in versione ${d.versione}, questa pagina arriva alla ${VERSIONE_ASTA}.` };
   if (!d.asta || typeof d.asta !== "object")
@@ -2030,9 +2160,24 @@ function miaRosa() {
 
 // Quanti acquisti ti mancano per chiudere la rosa. In Mantra la composizione e'
 // libera: l'unico tetto vero e' il numero di blocchi portieri, il resto sono
-// posti che si contendono fra loro.
+// posti che si contendono fra loro. In Classic invece ogni ruolo ha i suoi
+// posti e vanno riempiti tutti, quindi il conto si fa reparto per reparto: chi
+// ha gia' otto difensori non ha piu' slot da difensore, e i crediti che gli
+// restano valgono solo per gli altri reparti.
+function mancantiPerRuolo(rosa) {
+  const slot = DATI.riepilogo.lega.slot_rosa;
+  if (!slot) return null;
+  const presi = {};
+  for (const v of rosa) presi[v.ruolo] = (presi[v.ruolo] || 0) + 1;
+  const mancano = {};
+  for (const [r, n] of Object.entries(slot)) mancano[r] = Math.max(0, n - (presi[r] || 0));
+  return mancano;
+}
+
 function slotDaRiempire(rosa) {
   const lega = DATI.riepilogo.lega;
+  const mancano = mancantiPerRuolo(rosa);
+  if (mancano) return Object.values(mancano).reduce((s, n) => s + n, 0);
   const blocchiPresi = rosa.filter((v) => v.ruolo === "P").length;
   const movimentoPresi = rosa.length - blocchiPresi;
   return (lega.giocatori_movimento - movimentoPresi) +
@@ -2140,9 +2285,14 @@ function aggiornaBarraAsta() {
   elMax.className = daPrendere > 0 && massima <= 0 ? "i-cattivo" : "";
 
   // In Mantra la composizione e' libera: i conteggi per ruolo sono informativi,
-  // l'unico limite vero e' il numero di blocchi portieri.
-  const perRuolo = ["D", "C", "A"]
-    .map((m) => `${m} ${rosa.filter((v) => v.ruolo === m).length}`)
+  // l'unico limite vero e' il numero di blocchi portieri. In Classic sono il
+  // vincolo stesso, quindi si leggono come "quanti su quanti".
+  const slot = lega.slot_rosa;
+  const perRuolo = ruoliInBarra()
+    .map((m) => {
+      const presi = rosa.filter((v) => v.ruolo === m).length;
+      return slot ? `${m} ${presi}/${slot[m]}` : `${m} ${presi}`;
+    })
     .join("  ");
   document.getElementById("rosa-ruoli").textContent = aBlocchi
     ? `Blocchi ${blocchiPresi}/${lega.blocchi_per_squadra}  ·  ${perRuolo}`
@@ -2173,15 +2323,22 @@ function aggiornaModulo() {
 // Quanti giocatori da titolare restano ancora da contendere. E' il numero che
 // dice se conviene aspettare: finche' ce ne sono in abbondanza il prezzo lo
 // fa la concorrenza, quando restano gli ultimi lo fa la disperazione.
+// Con i portieri a blocchi il ruolo P non si compra giocatore per giocatore e
+// ha una scheda tutta sua; senza blocchi e' un acquisto come gli altri, e in
+// barra deve esserci.
+function ruoliInBarra() {
+  return aBlocchi ? ["D", "C", "A"] : ["P", "D", "C", "A"];
+}
+
 function aggiornaTitolariLiberi() {
-  const liberi = { D: 0, C: 0, A: 0 };
-  const totali = { D: 0, C: 0, A: 0 };
+  const liberi = {}, totali = {};
+  for (const m of ruoliInBarra()) { liberi[m] = 0; totali[m] = 0; }
   for (const g of DATI.giocatori) {
     if (!g.titolare_di_lega || totali[g.ruolo_classic] === undefined) continue;
     totali[g.ruolo_classic]++;
     if (!asta[g.id]) liberi[g.ruolo_classic]++;
   }
-  document.getElementById("titolari-liberi").innerHTML = ["D", "C", "A"]
+  document.getElementById("titolari-liberi").innerHTML = ruoliInBarra()
     .map((m) => `<span class="conta-ruolo r-${m}" title="${liberi[m]} liberi su ${totali[m]} ${NOMI_MACRO[m].toLowerCase()} da titolare">${m} ${liberi[m]}</span>`)
     .join(" ");
 }
@@ -2250,11 +2407,14 @@ function rosaDiMovimento() {
   // pagarlo tutto insieme (quasi un secondo, misurato)
   const fuori = [];
   for (const v of miaRosa()) {
-    if (v.blocco) continue;                    // il portiere e' un blocco a parte
+    // Il portiere non entra nelle dieci caselle di movimento in nessuno dei
+    // due formati: in Mantra e' un blocco a parte, in Classic e' un giocatore
+    // come gli altri ma i moduli non hanno una casella per lui.
+    if (v.blocco || v.ruolo === "P") continue;
     const g = DATI.giocatori.find((x) => x.id === v.id);
     if (!g) continue;
     fuori.push({
-      id: g.id, nome: g.nome, ruoli: g.ruoli_mantra,
+      id: g.id, nome: g.nome, ruoli: g.ruoli,
       valore: g.prezzo_consigliato || v.prezzo || 1,
       pagato: v.prezzo,
     });
@@ -2272,12 +2432,61 @@ function moduliMigliori() {
   return { rosa, esiti };
 }
 
-// Controlli di composizione della rosa. Non sono regole del gioco ma
-// convenzioni d'asta documentate, e servono a intercettare i due errori che
-// costano di piu': restare corti dietro, dove squalifiche e infortuni ti
-// fanno giocare in dieci, e immobilizzare crediti in punte che non
-// schiererai mai. Le soglie dipendono dal modulo verso cui stai andando.
+// Controlli di composizione della rosa. Cambiano formato per formato perche'
+// gli errori da intercettare sono diversi: in Mantra la rosa e' libera e si
+// sbaglia scegliendo male i ruoli, in Classic la composizione la impone il
+// regolamento e si sbaglia col portafoglio -- arrivare in fondo con sei slot
+// di un reparto e trenta crediti.
 function controlliRosa(migliore, rosa) {
+  return DATI.riepilogo.lega.slot_rosa
+    ? controlliRosaClassic()
+    : controlliRosaMantra(migliore, rosa);
+}
+
+// In Classic non c'e' niente da scegliere sulla forma della rosa: 3+8+8+6 e'
+// il regolamento. Quello che si puo' ancora sbagliare e' l'ordine in cui la
+// riempi, e sono due errori soli -- comprare piu' giocatori di quanti ne puoi
+// schierare in un reparto, e restare senza crediti per un reparto che devi
+// comunque completare.
+function controlliRosaClassic() {
+  const slot = DATI.riepilogo.lega.slot_rosa;
+  const rosa = miaRosa();
+  const mancano = mancantiPerRuolo(rosa);
+  const presi = {};
+  for (const v of rosa) presi[v.ruolo] = (presi[v.ruolo] || 0) + 1;
+
+  const avvisi = [];
+  for (const [r, n] of Object.entries(slot)) {
+    if ((presi[r] || 0) > n) {
+      avvisi.push({
+        tipo: "troppi",
+        testo: `Hai <strong>${presi[r]} ${NOMI_MACRO[r].toLowerCase()}</strong> e la rosa ne
+                prevede ${n}. Quelli in più non li potrai neanche mettere in panchina, e
+                sono crediti tolti ai reparti che ti restano da chiudere.`,
+      });
+    }
+  }
+
+  const restanti = Object.values(mancano).reduce((s, n) => s + n, 0);
+  const crediti = creditiRimasti(rosa);
+  for (const [r, n] of Object.entries(mancano)) {
+    // un credito a testa e' il minimo che gli altri slot ti costeranno: il
+    // resto e' quello che puoi ancora spendere davvero in questo reparto
+    const spendibili = crediti - (restanti - n);
+    if (n >= 2 && spendibili <= n * 2) {
+      avvisi.push({
+        tipo: "manca",
+        testo: `Ti mancano <strong>${n} ${NOMI_MACRO[r].toLowerCase()}</strong> e per loro ti
+                restano ${Math.max(0, spendibili)} crediti: quel reparto lo chiuderai a un
+                credito a testa. In Classic non è un ripiego che puoi evitare comprando
+                altrove — gli slot vanno riempiti comunque.`,
+      });
+    }
+  }
+  return avvisi;
+}
+
+function controlliRosaMantra(migliore, rosa) {
   const caselle = MODULI[migliore.modulo];
   const difensori = caselle.filter((c) => ["dd", "ds", "dc", "dc/b"].includes(c)).length;
   const punte = caselle.filter((c) => c.split("/").some((r) => ["a", "pc"].includes(r))).length;
@@ -2374,7 +2583,7 @@ function baseXI() {
 }
 
 function _voce(g) {
-  return { id: g.id, nome: g.nome, ruoli: g.ruoli_mantra, valore: g.prezzo_consigliato || 1 };
+  return { id: g.id, nome: g.nome, ruoli: g.ruoli, valore: g.prezzo_consigliato || 1 };
 }
 
 // Di quanto alza il tuo undici, in crediti di valore schierato. Per chi hai
@@ -2386,8 +2595,19 @@ function valoreMarginale(g) {
   // schiantare su `ruoli.includes`, e con l'interruttore acceso la scheda
   // Portieri smetteva di disegnarsi. Qui il valore marginale non ha senso:
   // chi compra un blocco compra la porta per tutte e 38 le giornate.
-  if (!Array.isArray(g.ruoli_mantra) || g.acquisto_a_blocchi) return null;
+  if (!Array.isArray(g.ruoli) || g.acquisto_a_blocchi) return null;
   if (_marginale.has(g.id)) return _marginale.get(g.id);
+  // In Classic il portiere si compra uno per uno, ma nei moduli non c'e' una
+  // casella per lui: il risolutore non lo trovava da nessuna parte e gli dava
+  // zero, cioe' con "Per la tua rosa" acceso tutti i portieri finivano a un
+  // tetto di zero crediti. La porta e' pero' esattamente lo stesso problema
+  // dell'undici, con una casella sola: quello che vale un portiere e' il
+  // vantaggio sul miglior portiere che hai gia'.
+  if (g.ruolo_classic === "P") {
+    const mv = marginalePortiere(g);
+    _marginale.set(g.id, mv);
+    return mv;
+  }
   const rosa = rosaDiMovimento();
   const mio = rosa.some((v) => v.id === g.id);
   const senza = mio ? valoreXI(rosa.filter((v) => v.id !== g.id)) : baseXI();
@@ -2395,6 +2615,18 @@ function valoreMarginale(g) {
   const mv = Math.max(0, con - senza);
   _marginale.set(g.id, mv);
   return mv;
+}
+
+function marginalePortiere(g) {
+  const valore = (v) => {
+    const x = DATI.giocatori.find((y) => y.id === v.id);
+    return (x && x.prezzo_consigliato) || v.prezzo || 1;
+  };
+  const altri = miaRosa()
+    .filter((v) => v.ruolo === "P" && v.id !== g.id)
+    .map(valore)
+    .sort((a, b) => b - a);
+  return Math.max(0, (g.prezzo_consigliato || 1) - (altri[0] || 0));
 }
 
 // ------------------------------------------- i blocchi portieri, in coppia
@@ -2547,20 +2779,43 @@ function slotMovimento(rosa) {
   return Math.max(0, DATI.riepilogo.lega.giocatori_movimento - presi);
 }
 
-// I blocchi portieri vanno comprati comunque: quei crediti non sono
-// disponibili per il resto della rosa. Metto da parte il prezzo del blocco
-// mediano fra quelli ancora liberi, non del migliore: uno lo prendi di
-// sicuro, che sia il migliore rimasto non e' detto.
-function creditiPerMovimento(rosa) {
+// La porta va comprata comunque: quei crediti non sono disponibili per il
+// resto della rosa, e vanno messi da parte prima di ragionare sul per-slot.
+//
+// Quanti crediti dipende dal formato, ma la domanda e' la stessa. Con i
+// blocchi metto da parte il prezzo del blocco mediano fra quelli ancora
+// liberi, non del migliore: uno lo prendi di sicuro, che sia il migliore
+// rimasto non e' detto. In Classic i portieri sono tre ma se ne schiera uno:
+// il primo costa quanto un titolare di meta' classifica, il secondo e il
+// terzo un credito, perche' e' esattamente quello che sono.
+function portieriMancanti(rosa) {
   const lega = DATI.riepilogo.lega;
-  const crediti = creditiRimasti(rosa);
-  if (!aBlocchi) return crediti;
-  const mancanti = Math.max(0, lega.blocchi_per_squadra - rosa.filter((v) => v.ruolo === "P").length);
-  if (!mancanti) return crediti;
-  const liberi = BLOCCHI.filter((b) => !asta["blocco:" + b.squadra])
-    .map((b) => b.prezzo_consigliato).sort((a, b) => a - b);
-  const mediano = liberi.length ? liberi[Math.floor(liberi.length / 2)] : 1;
-  return Math.max(0, crediti - mancanti * mediano);
+  const quanti = aBlocchi ? lega.blocchi_per_squadra
+               : (lega.slot_rosa ? lega.slot_rosa.P : 0);
+  return Math.max(0, quanti - rosa.filter((v) => v.ruolo === "P").length);
+}
+
+function creditiDaTenerePerLaPorta(rosa, liberiSoltanto = true) {
+  const mancanti = portieriMancanti(rosa);
+  if (!mancanti) return 0;
+  if (aBlocchi) {
+    const prezzi = BLOCCHI
+      .filter((b) => !liberiSoltanto || !asta["blocco:" + b.squadra])
+      .map((b) => b.prezzo_consigliato).sort((a, b) => a - b);
+    return mancanti * (prezzi.length ? prezzi[Math.floor(prezzi.length / 2)] : 1);
+  }
+  const giaTitolare = rosa.some((v) => v.ruolo === "P");
+  if (giaTitolare) return mancanti;          // restano solo le riserve, un credito
+  const titolari = DATI.giocatori
+    .filter((g) => g.ruolo_classic === "P" && g.titolare_di_lega
+                   && (!liberiSoltanto || !asta[g.id]))
+    .map((g) => g.prezzo_consigliato || 1).sort((a, b) => a - b);
+  const uno = titolari.length ? titolari[Math.floor(titolari.length / 2)] : 1;
+  return uno + (mancanti - 1);
+}
+
+function creditiPerMovimento(rosa) {
+  return Math.max(0, creditiRimasti(rosa) - creditiDaTenerePerLaPorta(rosa));
 }
 
 // Il budget di movimento con cui parti, che e' il termine di paragone di
@@ -2568,12 +2823,9 @@ function creditiPerMovimento(rosa) {
 // listone, se ne hai meno devi stare sotto.
 function budgetIniziale() {
   const lega = DATI.riepilogo.lega;
-  let crediti = lega.crediti_iniziali;
-  if (aBlocchi && BLOCCHI.length) {
-    const prezzi = BLOCCHI.map((b) => b.prezzo_consigliato).sort((a, b) => a - b);
-    crediti -= lega.blocchi_per_squadra * prezzi[Math.floor(prezzi.length / 2)];
-  }
-  return crediti;
+  // a rosa vuota, cosi' il termine di paragone resta quello di partenza anche
+  // a meta' asta: e' il budget con cui *chiunque* affronta il movimento
+  return lega.crediti_iniziali - creditiDaTenerePerLaPorta([], false);
 }
 
 // Quanti crediti per slot ti restano, rispetto a quanti ne avevi all'inizio.
@@ -2659,6 +2911,14 @@ function prezzoPerLaTuaRosa(g) {
 // e da chi. Vale la pena dirlo, perche' e' l'informazione che ti fa scegliere
 // un altro ruolo invece di rilanciare per abitudine.
 function spiegaMarginale(g) {
+  // Il portiere non ha caselle da contendere: ne schieri uno e il secondo e'
+  // una riserva. La spiegazione giusta e' quella, non "il modulo e' pieno".
+  if (g.ruolo_classic === "P" && !g.acquisto_a_blocchi) {
+    const miei = miaRosa().filter((v) => v.ruolo === "P" && v.id !== g.id);
+    if (!miei.length) return null;
+    const titolare = miei.slice().sort((a, b) => b.prezzo - a.prezzo)[0];
+    return { entra: false, portiere: true, spinto: null, modulo: null, titolare: titolare.nome };
+  }
   const rosa = rosaDiMovimento().filter((v) => v.id !== g.id);
   if (!rosa.length) return null;
   let senza = null, con = null;
@@ -2718,7 +2978,7 @@ function disegnaModuli() {
     ${sprecati.map((g) => `<p class="spiegazione avviso-sprechi">
         <strong>${g.nome}</strong> è fra i tuoi giocatori più cari ma nel ${migliore.modulo}
         non trova posto: ${g.altrove === 0
-          ? "e non lo trova in <strong>nessuno</strong> degli undici moduli, insieme al resto della rosa."
+          ? `e non lo trova in <strong>nessuno</strong> dei ${esiti.length} moduli, insieme al resto della rosa.`
           : `entrerebbe in ${g.altrove} moduli su ${esiti.length}, ma nessuno di quelli sfrutta la rosa altrettanto bene.`}</p>`).join("")}
 
     ${controlliRosa(migliore, rosa).map((a) =>
@@ -2762,8 +3022,10 @@ function disegnaAsta() {
     const voci = rosa.filter((v) => v.ruolo === m);
     const spesa = voci.reduce((s, v) => s + v.prezzo, 0);
     const titolo = m === "P" && aBlocchi ? "Blocchi portieri" : NOMI_MACRO[m];
-    // solo i blocchi hanno un tetto: il resto della rosa e' a composizione libera
-    const su = m === "P" && aBlocchi ? `/${lega.blocchi_per_squadra}` : "";
+    // In Mantra il tetto ce l'hanno solo i blocchi, il resto della rosa e' a
+    // composizione libera; in Classic ogni reparto ha il suo e va detto.
+    const su = m === "P" && aBlocchi ? `/${lega.blocchi_per_squadra}`
+             : lega.slot_rosa ? `/${lega.slot_rosa[m]}` : "";
     return `<div class="gruppo-rosa">
       <div class="intestazione">${titolo} — ${voci.length}${su} · ${spesa} crediti</div>
       ${voci.length
