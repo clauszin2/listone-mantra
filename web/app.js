@@ -137,6 +137,7 @@ const stato = {
 };
 
 const NOMI_MACRO = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
+const AL_SINGOLARE = { P: "portiere", D: "difensore", C: "centrocampista", A: "attaccante" };
 const FRA_I = { P: "fra i portieri", D: "fra i difensori", C: "fra i centrocampisti", A: "fra gli attaccanti" };
 // I ruoli, i colori e i moduli sono quelli del formato scelto: stanno tutti in
 // FORMATI, qui restano solo i nomi con cui il resto del file li chiama.
@@ -1451,7 +1452,9 @@ function apriPannello(id) {
         ? `<div class="riga-calcolo"><span>Bonus versatilità (${g.ruoli.length} ruoli)</span><strong>×${g.moltiplicatore_versatilita}</strong></div>` : ""}
       ${g.prezzo_motore !== undefined && g.prezzo_motore !== null
         ? `<div class="riga-calcolo"><span>Prezzo del solo motore</span><strong>${arrotonda(g.prezzo_motore)}</strong></div>
-           <div class="riga-calcolo"><span>Dopo l'ancoraggio al mercato</span><strong>${arrotonda(g.prezzo_consigliato)}</strong></div>` : ""}
+           <div class="riga-calcolo"><span>Dopo l'ancoraggio al mercato</span><strong>${arrotonda(g.prezzo_senza_tetto ?? g.prezzo_consigliato)}</strong></div>` : ""}
+      ${g.tetto_asta
+        ? `<div class="riga-calcolo"><span>Tetto della lega per il ruolo</span><strong>${arrotonda(g.tetto_asta)}</strong></div>` : ""}
       <div class="riga-calcolo totale"><span>Prezzo consigliato</span><strong>${arrotonda(g.prezzo_consigliato)} crediti</strong></div>
       ${rigaLive(g.prezzo_consigliato, f)}
       <div class="riga-calcolo" style="border:none"><span>Posizione nel ruolo</span><strong>${g.posizione_ruolo}º ${FRA_I[g.ruolo_classic]}</strong></div>
@@ -1503,6 +1506,17 @@ function apriPannello(id) {
         ${g.rettifica.prezzo !== undefined ? `<div class="riga-calcolo"><span>Prezzo imposto</span><strong>${g.rettifica.prezzo}</strong></div>` : ""}
         ${g.rettifica.nota ? `<p style="margin-top:8px">${g.rettifica.nota}</p>` : ""}
       </div>`;
+  }
+
+  if (g.tetto_asta) {
+    html += `<p class="spiegazione">Il conto qui sopra si fermava a
+      <strong>${arrotonda(g.prezzo_senza_tetto)}</strong>, ma nella tua lega per un
+      ${AL_SINGOLARE[g.ruolo_classic] || "giocatore"} non si va sopra
+      <strong>${arrotonda(g.tetto_asta)}</strong>: un prezzo che nessuno sborsa non è un
+      consiglio, è un numero che non verrà mai messo alla prova. I
+      ${arrotonda(g.prezzo_senza_tetto - g.tetto_asta)} crediti di differenza non spariscono,
+      sono ridistribuiti sugli altri giocatori del listone — la spesa di una lega è fissa, e
+      quei crediti verranno spesi da qualche altra parte.</p>`;
   }
 
   const mod = g.contributo_modificatori;

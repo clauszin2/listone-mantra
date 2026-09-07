@@ -70,6 +70,18 @@ di quanto valga in Mantra, dove se i difensori rendono poco ne schieri uno in
 meno. In Mantra invece conta coprire le caselle, e chi ne copre due vale un
 premio.
 
+## Il tetto sui difensori
+
+In questa lega **per un difensore non si va sopra 130 crediti**, ed è scritto nel
+motore: sopra quella cifra il prezzo consigliato viene tagliato. Non è una
+correzione al modello, è un fatto sul mercato che il modello non può sapere — un
+prezzo che nessuno sborsa non è un consiglio, è un numero che non verrà mai
+messo alla prova. I crediti tagliati non spariscono: tornano sugli altri
+giocatori, perché la spesa di una lega è fissa e quei crediti verranno spesi da
+qualche altra parte. Al 6 settembre 2026 tocca un giocatore solo, Dimarco (296 →
+130 in Classic, 204 → 130 in Mantra). Il tetto si cambia — o se ne aggiungono per
+altri ruoli — da `lega.tetti_per_ruolo` in `config.json`.
+
 ## I prezzi, in breve
 
 I prezzi non sono quelli di listino: sono una stima di quanto vale ogni
