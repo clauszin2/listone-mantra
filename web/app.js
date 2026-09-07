@@ -1452,9 +1452,9 @@ function apriPannello(id) {
         ? `<div class="riga-calcolo"><span>Bonus versatilità (${g.ruoli.length} ruoli)</span><strong>×${g.moltiplicatore_versatilita}</strong></div>` : ""}
       ${g.prezzo_motore !== undefined && g.prezzo_motore !== null
         ? `<div class="riga-calcolo"><span>Prezzo del solo motore</span><strong>${arrotonda(g.prezzo_motore)}</strong></div>
-           <div class="riga-calcolo"><span>Dopo l'ancoraggio al mercato</span><strong>${arrotonda(g.prezzo_senza_tetto ?? g.prezzo_consigliato)}</strong></div>` : ""}
-      ${g.tetto_asta
-        ? `<div class="riga-calcolo"><span>Tetto della lega per il ruolo</span><strong>${arrotonda(g.tetto_asta)}</strong></div>` : ""}
+           <div class="riga-calcolo"><span>Dopo l'ancoraggio al mercato</span><strong>${arrotonda(g.prezzo_prima_calibrazione ?? g.prezzo_consigliato)}</strong></div>` : ""}
+      ${g.prezzo_prima_calibrazione !== undefined
+        ? `<div class="riga-calcolo"><span>Calibrazione sui prezzi d'asta reali</span><strong>${arrotonda(g.prezzo_consigliato)}</strong></div>` : ""}
       <div class="riga-calcolo totale"><span>Prezzo consigliato</span><strong>${arrotonda(g.prezzo_consigliato)} crediti</strong></div>
       ${rigaLive(g.prezzo_consigliato, f)}
       <div class="riga-calcolo" style="border:none"><span>Posizione nel ruolo</span><strong>${g.posizione_ruolo}º ${FRA_I[g.ruolo_classic]}</strong></div>
@@ -1508,15 +1508,31 @@ function apriPannello(id) {
       </div>`;
   }
 
-  if (g.tetto_asta) {
-    html += `<p class="spiegazione">Il conto qui sopra si fermava a
-      <strong>${arrotonda(g.prezzo_senza_tetto)}</strong>, ma nella tua lega per un
-      ${AL_SINGOLARE[g.ruolo_classic] || "giocatore"} non si va sopra
-      <strong>${arrotonda(g.tetto_asta)}</strong>: un prezzo che nessuno sborsa non è un
-      consiglio, è un numero che non verrà mai messo alla prova. I
-      ${arrotonda(g.prezzo_senza_tetto - g.tetto_asta)} crediti di differenza non spariscono,
-      sono ridistribuiti sugli altri giocatori del listone — la spesa di una lega è fissa, e
-      quei crediti verranno spesi da qualche altra parte.</p>`;
+  const cal = DATI.riepilogo.calibrazione_mercato;
+  if (g.prezzo_prima_calibrazione !== undefined && cal) {
+    const prima = g.prezzo_prima_calibrazione, dopo = g.prezzo_consigliato;
+    const f = (cal.fattori_di_reparto || {})[g.ruolo_classic];
+    const motivi = [];
+    if (f !== undefined && Math.abs(f - 1) >= 0.02) {
+      const q = Math.round(((cal.quote_obiettivo || {})[g.ruolo_classic] || 0) * 100);
+      motivi.push(`nelle aste vere il reparto <strong>${NOMI_MACRO[g.ruolo_classic].toLowerCase()}</strong>
+        si prende il <strong>${q}%</strong> della spesa, e il motore da solo ne chiedeva il
+        ${Math.round(((cal.quote_prima || {})[g.ruolo_classic] || 0) * 100)}%`);
+    }
+    if (cal.ginocchio && prima > cal.ginocchio) {
+      motivi.push(`sopra i ${arrotonda(cal.ginocchio)} crediti la cima del listone viene schiacciata:
+        il più pagato di una stagione vera costa circa il 17% del budget di una squadra, il motore
+        da solo ne chiedeva il 31%`);
+    }
+    if (g.tetto_asta) {
+      motivi.push(`in questa lega per un ${AL_SINGOLARE[g.ruolo_classic] || "giocatore"} non si
+        va sopra <strong>${arrotonda(g.tetto_asta)}</strong>`);
+    }
+    html += `<p class="spiegazione">Il conto del motore si fermava a
+      <strong>${arrotonda(prima)}</strong>, la calibrazione sui prezzi d'asta reali lo porta a
+      <strong>${arrotonda(dopo)}</strong>${motivi.length ? ": " + motivi.join("; ") : ""}. I
+      crediti non spariscono: la spesa di una lega è fissa, quindi quello che non va qui va da
+      un'altra parte.</p>`;
   }
 
   const mod = g.contributo_modificatori;

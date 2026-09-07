@@ -70,17 +70,36 @@ di quanto valga in Mantra, dove se i difensori rendono poco ne schieri uno in
 meno. In Mantra invece conta coprire le caselle, e chi ne copre due vale un
 premio.
 
-## Il tetto sui difensori
+## La calibrazione sui prezzi d'asta reali
 
-In questa lega **per un difensore non si va sopra 130 crediti**, ed è scritto nel
-motore: sopra quella cifra il prezzo consigliato viene tagliato. Non è una
-correzione al modello, è un fatto sul mercato che il modello non può sapere — un
-prezzo che nessuno sborsa non è un consiglio, è un numero che non verrà mai
-messo alla prova. I crediti tagliati non spariscono: tornano sugli altri
-giocatori, perché la spesa di una lega è fissa e quei crediti verranno spesi da
-qualche altra parte. Al 6 settembre 2026 tocca un giocatore solo, Dimarco (296 →
-130 in Classic, 204 → 130 in Mantra). Il tetto si cambia — o se ne aggiungono per
-altri ruoli — da `lega.tetti_per_ruolo` in `config.json`.
+Il motore sa quanto vale un giocatore. Non sa, e non può dedurlo, **come si
+comporta una stanza d'asta**: il backtest confronta il motore con se stesso e il
+FVM è un listino, non un prezzo pagato. Quei numeri vengono da fuori, dai prezzi
+d'asta misurati, e sono tre.
+
+**Quanto pesa ogni reparto.** Su 50.175 acquisti reali della stagione 2026/27 la
+spesa si divide 6,6% portieri, 21,3% difesa, 34% centrocampo, 38,1% attacco (una
+seconda fonte dà 7 / 19 / 32 / 42, e metà dei fantallenatori sta fra 5,5-7,9,
+14,8-22,5, 26,3-37,9, 35,7-48,4). Il listone Classic da solo ne metteva **25,7%
+in difesa** — fuori dall'intervallo in cui sta metà della gente — e **32,4% in
+attacco**, sotto il minimo. Adesso le quote sono quelle misurate, e i fattori di
+reparto non sono scritti a mano: il motore li risolve finché le quote tornano.
+Il Mantra non ha questa correzione perché ne usciva già in riga (19,1 / 28,9 /
+44,8), e di aste Mantra non ci sono numeri pubblicati.
+
+**Quanto costa il più caro.** Il giocatore più pagato di una stagione vera va a
+84 crediti su 500, il 16,8% del budget di una squadra. Il motore ne chiedeva il
+31%: **la cima costava il doppio della realtà**, in tutti e due i formati. Ora
+il più caro atterra su 200 crediti su 1000, e sotto i 120 non si tocca niente —
+in mezzo la coda viene schiacciata, mantenendo l'ordine.
+
+**Il tetto per ruolo.** In questa lega per un difensore non si va sopra 130
+crediti, e resta come rete sotto le altre due. Fa ancora lavoro: senza, il primo
+difensore starebbe sui 170.
+
+I crediti tolti non spariscono da nessuna parte: la spesa di una lega è fissa, e
+quello che non va in cima va nel mezzo del listone. Tutti e tre i numeri si
+cambiano da `lega` in `config.json`.
 
 ## I prezzi, in breve
 
