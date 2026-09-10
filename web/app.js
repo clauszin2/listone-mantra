@@ -1511,28 +1511,32 @@ function apriPannello(id) {
   const cal = DATI.riepilogo.calibrazione_mercato;
   if (g.prezzo_prima_calibrazione !== undefined && cal) {
     const prima = g.prezzo_prima_calibrazione, dopo = g.prezzo_consigliato;
-    const f = (cal.fattori_di_reparto || {})[g.ruolo_classic];
+    const cima = (cal.cima_per_ruolo || {})[g.ruolo_classic];
+    const curva = (cal.curve || {})[g.ruolo_classic];
     const motivi = [];
-    if (f !== undefined && Math.abs(f - 1) >= 0.02) {
-      const q = Math.round(((cal.quote_obiettivo || {})[g.ruolo_classic] || 0) * 100);
-      motivi.push(`nelle aste vere il reparto <strong>${NOMI_MACRO[g.ruolo_classic].toLowerCase()}</strong>
-        si prende il <strong>${q}%</strong> della spesa, e il motore da solo ne chiedeva il
-        ${Math.round(((cal.quote_prima || {})[g.ruolo_classic] || 0) * 100)}%`);
+    if (cima) {
+      const nome = AL_SINGOLARE[g.ruolo_classic] || "giocatore";
+      motivi.push(`in questa lega ${nome === "attaccante" ? "l'attaccante" : "il " + nome} più caro
+        va via a <strong>${arrotonda(cima)}</strong>, e da lì il reparto scende con la
+        pendenza che quel numero impone`);
     }
-    if (cal.ginocchio && prima > cal.ginocchio) {
-      motivi.push(`sopra i ${arrotonda(cal.ginocchio)} crediti la cima del listone viene schiacciata:
-        il più pagato di una stagione vera costa circa il 17% del budget di una squadra, il motore
-        da solo ne chiedeva il 31%`);
-    }
-    if (g.tetto_asta) {
-      motivi.push(`in questa lega per un ${AL_SINGOLARE[g.ruolo_classic] || "giocatore"} non si
-        va sopra <strong>${arrotonda(g.tetto_asta)}</strong>`);
+    const q = (cal.quote_obiettivo || {})[g.ruolo_classic];
+    const qp = (cal.quote_prima || {})[g.ruolo_classic];
+    if (q && qp && Math.abs(q - qp) >= 0.02) {
+      motivi.push(`e il reparto pesa il <strong>${Math.round(q * 100)}%</strong> della spesa
+        di una lega, dove il motore da solo ne chiedeva il ${Math.round(qp * 100)}%`);
     }
     html += `<p class="spiegazione">Il conto del motore si fermava a
-      <strong>${arrotonda(prima)}</strong>, la calibrazione sui prezzi d'asta reali lo porta a
-      <strong>${arrotonda(dopo)}</strong>${motivi.length ? ": " + motivi.join("; ") : ""}. I
-      crediti non spariscono: la spesa di una lega è fissa, quindi quello che non va qui va da
-      un'altra parte.</p>`;
+      <strong>${arrotonda(prima)}</strong>, la calibrazione sui prezzi d'asta lo porta a
+      <strong>${arrotonda(dopo)}</strong>${motivi.length ? ": " + motivi.join(", ") : ""}.
+      ${curva && curva[1] > 1.05
+        ? `La cima di questo reparto è ripida (esponente ${curva[1].toFixed(2)}): il primo
+           costa molto più del terzo, quindi lasciarlo andare e prendere il secondo fa
+           risparmiare parecchio.`
+        : curva && curva[1] < 0.95
+          ? `La cima di questo reparto è piatta (esponente ${curva[1].toFixed(2)}): fra il primo
+             e il quinto passa poco, quindi non conviene svenarsi sul più conteso.`
+          : ""}</p>`;
   }
 
   const mod = g.contributo_modificatori;
